@@ -6,13 +6,20 @@ document.addEventListener("DOMContentLoaded", function () {
     const rightArrows = document.querySelectorAll(".slider-arrow.right");
     const eventRows = document.querySelectorAll(".event-row");
 
+<<<<<<< HEAD
     // Add event listeners for left arrows
+=======
+>>>>>>> 8e0ec896e935d81ee9a1f97f3e2037cc23fd957b
     leftArrows.forEach((arrow) => {
         arrow.addEventListener("click", function () {
             const row = this.nextElementSibling;
             const cardWidth = row.querySelector(".event-card").offsetWidth + 20;
             row.scrollBy({
+<<<<<<< HEAD
                 left: -cardWidth * 1,
+=======
+                left: -cardWidth * 1, 
+>>>>>>> 8e0ec896e935d81ee9a1f97f3e2037cc23fd957b
                 behavior: "smooth",
             });
         });
@@ -29,6 +36,10 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     });
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> 8e0ec896e935d81ee9a1f97f3e2037cc23fd957b
     updateArrowVisibility();
 
     eventRows.forEach((row) => {
