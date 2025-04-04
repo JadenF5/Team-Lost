@@ -16,7 +16,6 @@
         <button id="signup-btn" class="login-btn">Sign Up</button>
       </div>
 
-      <!-- Sign In Modal -->
       <div id="signin-modal" class="modal">
         <div class="modal-content">
           <span class="close" onclick="closeModals()">&times;</span>
@@ -31,7 +30,6 @@
         </div>
       </div>
 
-      <!-- Sign Up Modal -->
       <div id="signup-modal" class="modal">
         <div class="modal-content">
           <span class="close" onclick="closeModals()">&times;</span>
@@ -40,7 +38,6 @@
             <input type="text" id="signup-username" placeholder="Choose Username" required />
             <input type="email" id="signup-email" placeholder="Email" required />
           
-            <!-- Create Password -->
             <input
               type="password"
               id="signup-password"
@@ -48,7 +45,6 @@
               required
             />
           
-            <!-- ✅ Password requirements + strength -->
             <div id="password-feedback" style="display: none;">
               <ul id="password-requirements" class="password-rules">
                 <li id="length" class="invalid" data-text="At least 8 characters">❌ At least 8 characters</li>
@@ -63,7 +59,6 @@
               <div class="strength-bar" id="strength-bar"></div>
             </div>
           
-            <!-- Confirm -->
             <input type="password" id="signup-confirm-password" placeholder="Confirm Password" required />
             <button type="submit" class="login-btn">Create Account</button>
           </form>          

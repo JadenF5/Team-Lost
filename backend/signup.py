@@ -1,4 +1,3 @@
-# signup.py
 from flask import Blueprint, request, jsonify
 from flask_cors import CORS
 import re
@@ -67,7 +66,7 @@ def signup_google():
             "id": email,
             "email": email,
             "username": name,
-            "password": None  # optional
+            "password": None  
         })
 
         return jsonify({"success": True, "message": "Signed up with Google!", "email": email, "username": name})

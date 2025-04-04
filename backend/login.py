@@ -1,4 +1,3 @@
-# login.py
 from flask import Blueprint, request, jsonify
 from flask_cors import CORS
 from db import container

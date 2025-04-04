@@ -72,14 +72,12 @@ google.accounts.id.initialize({
     });
   }
   
-  // Password feedback
   const passwordInput = document.getElementById("signup-password");
   const feedbackBox = document.getElementById("password-feedback");
   const strengthText = document.getElementById("password-strength").querySelector("span");
   const strengthBar = document.getElementById("strength-bar");
   
   if (passwordInput) {
-    // Show/hide logic depending on focus
     document.addEventListener("focusin", (e) => {
       if (e.target === passwordInput) {
         if (passwordInput.value.trim() !== "") {
@@ -96,7 +94,6 @@ google.accounts.id.initialize({
       }
     });
   
-    // Password input event updates feedback and strength
     passwordInput.addEventListener("input", () => {
       const password = passwordInput.value;
   
@@ -146,7 +143,6 @@ google.accounts.id.initialize({
       strengthBar.style.backgroundColor = color;
     });
   
-    // Updates individual rule lines
     function updateRequirement(id, condition) {
       const element = document.getElementById(id);
       if (element) {
@@ -163,7 +159,6 @@ google.accounts.id.initialize({
       }
     }
   
-    // Resets all indicators
     function resetFeedback() {
       ["length", "uppercase", "lowercase", "symbol"].forEach(id => {
         const el = document.getElementById(id);
