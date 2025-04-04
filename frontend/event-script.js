@@ -1,4 +1,10 @@
 document.addEventListener("DOMContentLoaded", function () {
+    const userSession = JSON.parse(localStorage.getItem("userSession"));
+    if (!userSession) {
+        window.location.href = "index.html";
+        return;
+    }
+
     const urlParams = new URLSearchParams(window.location.search);
     const eventId = urlParams.get("id");
 
