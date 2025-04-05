@@ -27,3 +27,15 @@ def insert_event(event_data):
         events_container.upsert_item(event_data)
     except Exception as e:
         print(f"Error inserting event: {e}")
+
+# Get an event by its EventID
+def get_event_w_id(event_id):
+    try:
+        query = f"SELECT * FROM c WHERE c.id = '{event_id}'"
+        items = list(events_container.query_items(query=query, enable_cross_partition_query=True))
+        if items:
+            return items[0]
+        else:
+            None
+    except Exception as e:
+        print(f"Error fetching event by ID: {e}")
