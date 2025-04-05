@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Stevens Events - Main</title>
+        <link rel="stylesheet" href="./main-style.css" />
+    </head>
+    <body>
+        <header>
+            <div class="search-container">
+                <input
+                    type="text"
+                    id="search-bar"
+                    placeholder="What events are you looking for?"
+                />
+                <button id="search-button">Search</button>
+            </div>
+            <div class="user-info">
+                <span id="user-name"></span>
+                <button id="logout-btn">Logout</button>
+            </div>
+        </header>
+
+        <main>
+            <section class="events-container">
+                <div class="location-section">
+                    <h2 class="location-header">Hoboken</h2>
+
+                    <div class="row-container">
+                        <div class="slider-arrow left">←</div>
+                        <div class="event-row" id="hoboken-row">
+                            <div
+                                class="event-card"
+                                onclick="window.location.href='event.html?id=1'"
+                            >
+                                <div class="event-icon"></div>
+                                <h3>Event 1</h3>
+                                <p>
+                                    Yappa Yappa Yappa Yappa Yappa Yappa Yappa
+                                    Yappa Yappa Yappa
+                                </p>
+                            </div>
+
+                            <div
+                                class="event-card"
+                                onclick="window.location.href='event.html?id=2'"
+                            >
+                                <div class="event-icon"></div>
+                                <h3>Event 2</h3>
+                                <p>
+                                    Yappa Yappa Yappa Yappa Yappa Yappa Yappa
+                                    Yappa Yappa Yappa
+                                </p>
+                            </div>
+
+                            <div
+                                class="event-card"
+                                onclick="window.location.href='event.html?id=3'"
+                            >
+                                <div class="event-icon"></div>
+                                <h3>Event 3</h3>
+                                <p>
+                                    Yappa Yappa Yappa Yappa Yappa Yappa Yappa
+                                    Yappa Yappa Yappa
+                                </p>
+                            </div>
+
+                            <div
+                                class="event-card"
+                                onclick="window.location.href='event.html?id=4'"
+                            >
+                                <div class="event-icon"></div>
+                                <h3>Event 4</h3>
+                                <p>
+                                    Yappa Yappa Yappa Yappa Yappa Yappa Yappa
+                                    Yappa Yappa Yappa
+                                </p>
+                            </div>
+
+                            <div
+                                class="event-card"
+                                onclick="window.location.href='event.html?id=5'"
+                            >
+                                <div class="event-icon"></div>
+                                <h3>Event 5</h3>
+                                <p>
+                                    Yappa Yappa Yappa Yappa Yappa Yappa Yappa
+                                    Yappa Yappa Yappa
+                                </p>
+                            </div>
+
+                            <a href="#" class="see-more-btn">
+                                <div class="see-more-card">
+                                    <span>See More</span>
+                                    <div class="arrow">→</div>
+                                </div>
+                            </a>
+                        </div>
+                        <div class="slider-arrow right">→</div>
+                    </div>
+                </div>
+
+                <div class="location-section">
+                    <h2 class="location-header">New York City</h2>
+
+                    <div class="row-container">
+                        <div class="slider-arrow left">←</div>
+                        <div class="event-row" id="nyc-row">
+                            <div
+                                class="event-card"
+                                onclick="window.location.href='event.html?id=6'"
+                            >
+                                <div class="event-icon"></div>
+                                <h3>Event 6</h3>
+                                <p>
+                                    Yappa Yappa Yappa Yappa Yappa Yappa Yappa
+                                    Yappa Yappa Yappa
+                                </p>
+                            </div>
+
+                            <div
+                                class="event-card"
+                                onclick="window.location.href='event.html?id=7'"
+                            >
+                                <div class="event-icon"></div>
+                                <h3>Event 7</h3>
+                                <p>
+                                    Yappa Yappa Yappa Yappa Yappa Yappa Yappa
+                                    Yappa Yappa Yappa
+                                </p>
+                            </div>
+
+                            <div
+                                class="event-card"
+                                onclick="window.location.href='event.html?id=8'"
+                            >
+                                <div class="event-icon"></div>
+                                <h3>Event 8</h3>
+                                <p>
+                                    Yappa Yappa Yappa Yappa Yappa Yappa Yappa
+                                    Yappa Yappa Yappa
+                                </p>
+                            </div>
+
+                            <div
+                                class="event-card"
+                                onclick="window.location.href='event.html?id=9'"
+                            >
+                                <div class="event-icon"></div>
+                                <h3>Event 9</h3>
+                                <p>
+                                    Yappa Yappa Yappa Yappa Yappa Yappa Yappa
+                                    Yappa Yappa Yappa
+                                </p>
+                            </div>
+
+                            <div
+                                class="event-card"
+                                onclick="window.location.href='event.html?id=10'"
+                            >
+                                <div class="event-icon"></div>
+                                <h3>Event 10</h3>
+                                <p>
+                                    Yappa Yappa Yappa Yappa Yappa Yappa Yappa
+                                    Yappa Yappa Yappa
+                                </p>
+                            </div>
+
+                            <a href="#" class="see-more-btn">
+                                <div class="see-more-card">
+                                    <span>See More</span>
+                                    <div class="arrow">→</div>
+                                </div>
+                            </a>
+                        </div>
+                        <div class="slider-arrow right">→</div>
+                    </div>
+                </div>
+
+                <div class="location-section">
+                    <h2 class="location-header">Jersey City</h2>
+
+                    <div class="row-container">
+                        <div class="slider-arrow left">←</div>
+                        <div class="event-row" id="jersey-row">
+                            <div
+                                class="event-card"
+                                onclick="window.location.href='event.html?id=11'"
+                            >
+                                <div class="event-icon"></div>
+                                <h3>Event 11</h3>
+                                <p>
+                                    Yappa Yappa Yappa Yappa Yappa Yappa Yappa
+                                    Yappa Yappa Yappa
+                                </p>
+                            </div>
+
+                            <div
+                                class="event-card"
+                                onclick="window.location.href='event.html?id=12'"
+                            >
+                                <div class="event-icon"></div>
+                                <h3>Event 12</h3>
+                                <p>
+                                    Yappa Yappa Yappa Yappa Yappa Yappa Yappa
+                                    Yappa Yappa Yappa
+                                </p>
+                            </div>
+
+                            <div
+                                class="event-card"
+                                onclick="window.location.href='event.html?id=13'"
+                            >
+                                <div class="event-icon"></div>
+                                <h3>Event 13</h3>
+                                <p>
+                                    Yappa Yappa Yappa Yappa Yappa Yappa Yappa
+                                    Yappa Yappa Yappa
+                                </p>
+                            </div>
+
+                            <div
+                                class="event-card"
+                                onclick="window.location.href='event.html?id=14'"
+                            >
+                                <div class="event-icon"></div>
+                                <h3>Event 14</h3>
+                                <p>
+                                    Yappa Yappa Yappa Yappa Yappa Yappa Yappa
+                                    Yappa Yappa Yappa
+                                </p>
+                            </div>
+
+                            <div
+                                class="event-card"
+                                onclick="window.location.href='event.html?id=15'"
+                            >
+                                <div class="event-icon"></div>
+                                <h3>Event 15</h3>
+                                <p>
+                                    Yappa Yappa Yappa Yappa Yappa Yappa Yappa
+                                    Yappa Yappa Yappa
+                                </p>
+                            </div>
+
+                            <a href="#" class="see-more-btn">
+                                <div class="see-more-card">
+                                    <span>See More</span>
+                                    <div class="arrow">→</div>
+                                </div>
+                            </a>
+                        </div>
+                        <div class="slider-arrow right">→</div>
+                    </div>
+                </div>
+
+                <div class="location-section">
+                    <h2 class="location-header">Other</h2>
+
+                    <div class="row-container">
+                        <div class="slider-arrow left">←</div>
+                        <div class="event-row" id="other-row">
+                            <div
+                                class="event-card"
+                                onclick="window.location.href='event.html?id=16'"
+                            >
+                                <div class="event-icon"></div>
+                                <h3>Event 16</h3>
+                                <p>
+                                    Yappa Yappa Yappa Yappa Yappa Yappa Yappa
+                                    Yappa Yappa Yappa
+                                </p>
+                            </div>
+
+                            <div
+                                class="event-card"
+                                onclick="window.location.href='event.html?id=17'"
+                            >
+                                <div class="event-icon"></div>
+                                <h3>Event 17</h3>
+                                <p>
+                                    Yappa Yappa Yappa Yappa Yappa Yappa Yappa
+                                    Yappa Yappa Yappa
+                                </p>
+                            </div>
+
+                            <div
+                                class="event-card"
+                                onclick="window.location.href='event.html?id=18'"
+                            >
+                                <div class="event-icon"></div>
+                                <h3>Event 18</h3>
+                                <p>
+                                    Yappa Yappa Yappa Yappa Yappa Yappa Yappa
+                                    Yappa Yappa Yappa
+                                </p>
+                            </div>
+
+                            <div
+                                class="event-card"
+                                onclick="window.location.href='event.html?id=19'"
+                            >
+                                <div class="event-icon"></div>
+                                <h3>Event 19</h3>
+                                <p>
+                                    Yappa Yappa Yappa Yappa Yappa Yappa Yappa
+                                    Yappa Yappa Yappa
+                                </p>
+                            </div>
+
+                            <div
+                                class="event-card"
+                                onclick="window.location.href='event.html?id=20'"
+                            >
+                                <div class="event-icon"></div>
+                                <h3>Event 20</h3>
+                                <p>
+                                    Yappa Yappa Yappa Yappa Yappa Yappa Yappa
+                                    Yappa Yappa Yappa
+                                </p>
+                            </div>
+
+                            <a href="#" class="see-more-btn">
+                                <div class="see-more-card">
+                                    <span>See More</span>
+                                    <div class="arrow">→</div>
+                                </div>
+                            </a>
+                        </div>
+                        <div class="slider-arrow right">→</div>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <script src="./main-script.js"></script>
+    </body>
+</html>
