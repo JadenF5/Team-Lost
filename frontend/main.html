@@ -9,12 +9,15 @@
     <body>
         <header>
             <div class="search-container">
-                <input
-                    type="text"
-                    id="search-bar"
-                    placeholder="What events are you looking for?"
-                />
-                <button id="search-button">Search</button>
+                <div class="search-bar-wrapper">
+                    <input
+                        type="text"
+                        id="search-bar"
+                        placeholder="What events are you looking for?"
+                        autocomplete="off"
+                    />
+                    <button id="search-button">Search</button>
+                </div>
             </div>
             <div class="user-info">
                 <span id="user-name"></span>
@@ -334,7 +337,6 @@
             </section>
         </main>
 
-
         <script src="./main-script.js"></script>
         <div
             id="copilot-chat-container"
@@ -366,6 +368,12 @@
                     ? "none"
                     : "block";
                 copilotChatToggle.textContent = isCurrentlyVisible ? "💬" : "✕";
+
+                if (isCurrentlyVisible) {
+                    copilotChatToggle.classList.remove("open");
+                } else {
+                    copilotChatToggle.classList.add("open");
+                }
             });
         </script>
     </body>

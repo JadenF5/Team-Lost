@@ -48,13 +48,195 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     });
 
+    // Create search results dropdown container
+    const searchContainer = document.querySelector(".search-container");
+
+    // Create and append the dropdown element
+    const searchDropdown = document.createElement("div");
+    searchDropdown.className = "search-results-dropdown";
+    searchDropdown.style.display = "none";
+    searchContainer.appendChild(searchDropdown);
+
+    // Track if we should close dropdown on document click
+    let allowDropdownClose = true;
+
+    // Function to fetch and display search results
+    async function fetchSearchResults(query) {
+        if (!query || query.length < 2) {
+            searchDropdown.style.display = "none";
+            return;
+        }
+
+        try {
+            // Fetch events from the API
+            const response = await fetch(
+                `http://localhost:5000/api/search?q=${encodeURIComponent(
+                    query
+                )}`
+            );
+
+            // If the backend search API isn't implemented yet, we'll use a fallback client-side search
+            if (!response.ok) {
+                performClientSideSearch(query);
+                return;
+            }
+
+            const results = await response.json();
+            displaySearchResults(results);
+        } catch (error) {
+            console.error("Error fetching search results:", error);
+            // Fallback to client-side filtering
+            performClientSideSearch(query);
+        }
+    }
+
+    // Fallback: Client-side search when API isn't available
+    function performClientSideSearch(query) {
+        // This function searches through the visible events on the page
+        query = query.toLowerCase().trim();
+        const eventCards = document.querySelectorAll(".event-card");
+        const results = [];
+
+        eventCards.forEach((card) => {
+            const title = card.querySelector("h3").textContent;
+            const description = card.querySelector("p").textContent;
+            const eventId = card.onclick
+                ? card.onclick.toString().match(/id=(\d+)/)[1]
+                : null;
+
+            if (
+                (title.toLowerCase().includes(query) ||
+                    description.toLowerCase().includes(query)) &&
+                eventId
+            ) {
+                results.push({
+                    id: eventId,
+                    title: title,
+                    description: description.substring(0, 60) + "...",
+                    location: card
+                        .closest(".location-section")
+                        .querySelector(".location-header").textContent,
+                });
+            }
+        });
+
+        displaySearchResults(results);
+    }
+
+    // Function to display search results in the dropdown
+    function displaySearchResults(results) {
+        searchDropdown.innerHTML = "";
+
+        if (results.length === 0) {
+            const noResults = document.createElement("div");
+            noResults.className = "no-results";
+            noResults.textContent = "No events found";
+            searchDropdown.appendChild(noResults);
+            searchDropdown.style.display = "block";
+            return;
+        }
+
+        results.forEach((result) => {
+            // Format location if available
+            let locationText = "";
+            if (result.location) {
+                // Clean up location text
+                locationText = result.location.trim();
+
+                // If there's an address in the location (often has numbers), keep it as is
+                if (!locationText.match(/\d+/)) {
+                    locationText = `${locationText}`;
+                }
+            }
+
+            // Prepare description - make it a bit cleaner
+            const description = result.description || "";
+            let formattedDescription = description;
+
+            // If description contains the title, don't repeat it
+            if (description.includes(result.title)) {
+                formattedDescription = description;
+            }
+
+            const resultItem = document.createElement("div");
+            resultItem.className = "result-item";
+            resultItem.innerHTML = `
+                <div class="result-title">${result.title}</div>
+                <div class="result-details">
+                    ${
+                        locationText
+                            ? `<span class="result-location">${locationText}</span>`
+                            : ""
+                    }
+                    <p class="result-description">${formattedDescription}</p>
+                </div>
+            `;
+
+            resultItem.addEventListener("click", () => {
+                window.location.href = `event.html?id=${result.id}`;
+            });
+
+            searchDropdown.appendChild(resultItem);
+        });
+
+        searchDropdown.style.display = "block";
+    }
+
+    // Event listener for search input with debounce
+    let debounceTimer;
+    searchBar.addEventListener("input", function () {
+        const query = this.value.trim();
+
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(() => {
+            fetchSearchResults(query);
+        }, 300); // Debounce for 300ms to avoid excessive API calls
+    });
+
     searchButton.addEventListener("click", function () {
-        performSearch();
+        const searchTerm = searchBar.value.toLowerCase().trim();
+        if (searchTerm.length >= 2) {
+            fetchSearchResults(searchTerm);
+        } else {
+            performSearch();
+        }
     });
 
     searchBar.addEventListener("keypress", function (e) {
         if (e.key === "Enter") {
-            performSearch();
+            const searchTerm = this.value.trim();
+            if (searchTerm.length >= 2) {
+                fetchSearchResults(searchTerm);
+            } else {
+                performSearch();
+            }
+        }
+    });
+
+    // Close dropdown when clicking outside
+    document.addEventListener("click", function (e) {
+        if (
+            allowDropdownClose &&
+            !searchDropdown.contains(e.target) &&
+            e.target !== searchBar &&
+            e.target !== searchButton
+        ) {
+            searchDropdown.style.display = "none";
+        }
+    });
+
+    // Prevent dropdown from closing when clicking inside it
+    searchDropdown.addEventListener("click", function (e) {
+        allowDropdownClose = false;
+        setTimeout(() => {
+            allowDropdownClose = true;
+        }, 100);
+    });
+
+    // Close dropdown when pressing Escape
+    document.addEventListener("keydown", function (e) {
+        if (e.key === "Escape") {
+            searchDropdown.style.display = "none";
         }
     });
 
@@ -81,6 +263,7 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 
+    // Original search functionality for highlighting events on the page
     function performSearch() {
         const searchTerm = searchBar.value.toLowerCase().trim();
 
