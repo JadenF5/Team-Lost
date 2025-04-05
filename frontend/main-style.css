@@ -373,3 +373,116 @@ header {
         max-height: 60vh;
     }
 }
+
+#popup-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.4); /* Slightly softer */
+    z-index: 9998;
+    backdrop-filter: blur(2px); /* adds background blur behind overlay */
+  }
+  
+  #preference-popup {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(0.95);
+    width: 90%;
+    max-width: 550px;
+    background: #ffffff;
+    padding: 35px 40px;
+    border-radius: 20px;
+    z-index: 9999;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+    opacity: 0;
+    animation: popupFadeIn 0.3s ease-out forwards;
+    text-align: center;
+    font-family: "Segoe UI", sans-serif;
+  }
+  
+  @keyframes popupFadeIn {
+    from {
+      opacity: 0;
+      transform: translate(-50%, -50%) scale(0.9);
+    }
+    to {
+      opacity: 1;
+      transform: translate(-50%, -50%) scale(1);
+    }
+  }
+  
+  .question {
+    margin-bottom: 25px;
+    text-align: left;
+  }
+  
+  .question label {
+    font-size: 18px;
+    font-weight: 600;
+    display: block;
+    margin-bottom: 10px;
+  }
+  
+  .question input[type="text"],
+  .question input[type="range"] {
+    width: 100%;
+    padding: 12px;
+    border-radius: 8px;
+    border: 1px solid #ccc;
+    font-size: 16px;
+    margin-top: 5px;
+    box-sizing: border-box;
+  }
+  
+  .question input[type="checkbox"] {
+    margin-right: 8px;
+    transform: scale(1.2);
+  }
+  
+  .popup-nav-btn {
+    background-color: #4285f4;
+    color: white;
+    border: none;
+    padding: 12px 30px;
+    font-size: 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+    margin-top: 20px;
+  }
+  
+  .popup-nav-btn:hover {
+    background-color: #3367d6;
+  }
+  
+  .progress-bar-container {
+    height: 8px;
+    background-color: #ddd;
+    border-radius: 4px;
+    margin-bottom: 30px;
+    overflow: hidden;
+  }
+  
+  .progress-bar {
+    height: 100%;
+    background-color: #4285f4;
+    width: 0%;
+    transition: width 0.3s ease;
+  }
+  
+  /* Blur everything else when popup is active */
+  .blurred #main-content {
+    filter: blur(4px);
+    pointer-events: none;
+    user-select: none;
+    transition: filter 0.3s ease;
+  }
+  
+  /* Hide everything until preference done */
+  .hide-content #main-content {
+    display: none;
+  }
+  

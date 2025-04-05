@@ -4,24 +4,23 @@ document.addEventListener("DOMContentLoaded", () => {
   
     if (!user || !user.email) {
       console.warn("No user found in localStorage");
+      document.body.classList.remove("blurred", "hide-content");
       return;
     }
   
     fetch(`http://127.0.0.1:5000/user/${user.email}`)
-      .then(res => res.json())
-      .then(data => {
-        console.log("Fetched user data:", data); // 🔍
-  
-        if (data.first_time_user) {
-          console.log("First time user! Showing popup"); // 🔍
-          showPreferencePopup(); 
-        } else {
-          console.log("Not first time, no popup needed."); // 🔍
-        }
-      })
-      .catch(err => {
-        console.error("Error fetching user info:", err); // 🔍
-      });
+    .then(res => res.json())
+    .then(data => {
+      if (data.first_time_user) {
+        showPreferencePopup();
+      } else {
+        document.body.classList.remove("blurred", "hide-content");
+      }
+    })
+    .catch(err => {
+      console.error("Failed to fetch user:", err);
+      document.body.classList.remove("blurred", "hide-content");
+    });
   });
   
   
@@ -76,105 +75,111 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     ];
   
+    let current = 0;
+    const answers = {};
+  
     const overlay = document.createElement("div");
     overlay.id = "popup-overlay";
   
     const popup = document.createElement("div");
     popup.id = "preference-popup";
   
-    const questionContainer = document.createElement("div");
-    questionContainer.id = "question-container";
+    const progressContainer = document.createElement("div");
+    progressContainer.className = "progress-bar-container";
   
-    const error = document.createElement("p");
-    error.style.color = "red";
+    const progressBar = document.createElement("div");
+    progressBar.className = "progress-bar";
   
-    popup.appendChild(questionContainer);
-    popup.appendChild(error);
+    progressContainer.appendChild(progressBar);
+    popup.appendChild(progressContainer);
   
-    const nextBtn = document.createElement("button");
-    nextBtn.textContent = "Next";
-    popup.appendChild(nextBtn);
+    function renderQuestion(index) {
+      popup.querySelectorAll(".question").forEach(q => q.remove());
+      popup.querySelectorAll(".popup-nav-btn").forEach(b => b.remove());
+  
+      const q = questions[index];
+      const wrapper = document.createElement("div");
+      wrapper.className = "question";
+  
+      wrapper.innerHTML += `<label>${q.question}</label>`;
+  
+      if (q.type === "checkbox") {
+        q.options.forEach(opt => {
+          wrapper.innerHTML += `
+            <label style="display:block;text-align:left;margin:5px 0;">
+              <input type="checkbox" name="${q.id}" value="${opt}" /> ${opt}
+            </label>`;
+        });
+      } else {
+        wrapper.innerHTML += `<input type="text" id="${q.id}" name="${q.id}" />`;
+      }
+  
+      popup.appendChild(wrapper);
+  
+      const nextBtn = document.createElement("button");
+      nextBtn.className = "popup-nav-btn";
+      nextBtn.innerText = index === questions.length - 1 ? "Submit" : "Next";
+  
+      nextBtn.onclick = () => {
+        if (q.type !== "checkbox") {
+          const inputVal = document.getElementById(q.id).value;
+          if (!inputVal.trim()) {
+            alert("Please fill in the field.");
+            return;
+          }
+  
+          if ((q.id === "budget" || q.id === "radius") && isNaN(inputVal)) {
+            alert(`${q.id.charAt(0).toUpperCase() + q.id.slice(1)} must be a number`);
+            return;
+          }
+  
+          answers[q.id] = inputVal.trim();
+        } else {
+          const checked = [...popup.querySelectorAll(`input[name="${q.id}"]:checked`)].map(c => c.value);
+          if (checked.length === 0) {
+            alert("Please select at least one option.");
+            return;
+          }
+          answers[q.id] = checked;
+        }
+  
+        current++;
+        if (current < questions.length) {
+          updateProgressBar();
+          renderQuestion(current);
+        } else {
+          submitPreferences();
+        }
+      };
+  
+      popup.appendChild(nextBtn);
+      updateProgressBar();
+    }
+  
+    function updateProgressBar() {
+      const progress = ((current) / questions.length) * 100;
+      progressBar.style.width = `${progress}%`;
+    }
+  
+    function submitPreferences() {
+      const user = JSON.parse(localStorage.getItem("userSession"));
+  
+      fetch("http://127.0.0.1:5000/submit-preferences", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: user.email, preferences: answers })
+      }).then(() => {
+        overlay.remove();
+        popup.remove();
+        document.body.classList.remove("blurred");
+        document.body.classList.remove("hide-content");
+      });
+    }
   
     document.body.appendChild(overlay);
     document.body.appendChild(popup);
     document.body.classList.add("blurred");
+    document.body.classList.add("hide-content");
   
-    let current = 0;
-    const answers = {};
-  
-    const renderQuestion = () => {
-      questionContainer.innerHTML = "";
-      error.textContent = "";
-  
-      const q = questions[current];
-      const label = document.createElement("label");
-      label.innerHTML = `<strong>${q.question}</strong>`;
-      questionContainer.appendChild(label);
-  
-      if (q.type === "checkbox") {
-        q.options.forEach(opt => {
-          const checkbox = document.createElement("input");
-          checkbox.type = "checkbox";
-          checkbox.name = q.id;
-          checkbox.value = opt;
-  
-          const lbl = document.createElement("label");
-          lbl.appendChild(checkbox);
-          lbl.append(` ${opt}`);
-          questionContainer.appendChild(lbl);
-        });
-      } else {
-        const input = document.createElement("input");
-        input.type = "text";
-        input.id = q.id;
-        questionContainer.appendChild(input);
-      }
-  
-      if (current === questions.length - 1) {
-        nextBtn.textContent = "Submit";
-      }
-    };
-  
-    renderQuestion();
-  
-    nextBtn.addEventListener("click", () => {
-      const q = questions[current];
-      error.textContent = "";
-  
-      if (q.type === "checkbox") {
-        const selected = [...document.querySelectorAll(`input[name="${q.id}"]:checked`)].map(el => el.value);
-        answers[q.id] = selected;
-      } else {
-        const val = document.getElementById(q.id).value.trim();
-        if (q.validate) {
-          const valid = q.validate(val);
-          if (valid !== true) {
-            error.textContent = valid;
-            return;
-          }
-        }
-        answers[q.id] = val;
-      }
-  
-      current++;
-  
-      if (current >= questions.length) {
-        // Done, submit preferences
-        fetch("http://127.0.0.1:5000/submit-preferences", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email: user.email, preferences: answers })
-        }).then(() => {
-          popup.remove();
-          overlay.remove();
-          document.body.classList.remove("blurred");
-          document.body.classList.remove("hide-content");
-        });
-      } else {
-        renderQuestion();
-      }
-    });
+    renderQuestion(current);
   }
-  
-  
-  
