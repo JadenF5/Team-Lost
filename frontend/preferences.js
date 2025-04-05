@@ -26,6 +26,7 @@ document.addEventListener("DOMContentLoaded", () => {
   
   
   function showPreferencePopup() {
+    const user = JSON.parse(localStorage.getItem("userSession"));
     const questions = [
       {
         id: "interests",
@@ -53,7 +54,8 @@ document.addEventListener("DOMContentLoaded", () => {
       {
         id: "budget",
         type: "text",
-        question: "What is your event budget preference?"
+        question: "What is your event budget preference?",
+        validate: value => /^\d+$/.test(value) || "Please enter a valid number"
       },
       {
         id: "vibe",
@@ -63,8 +65,9 @@ document.addEventListener("DOMContentLoaded", () => {
       },
       {
         id: "radius",
-        type: "range",
-        question: "What’s the maximum distance you’re willing to travel for an event (in miles)?"
+        type: "text",
+        question: "What’s the max distance you’re willing to travel for an event (in miles)?",
+        validate: value => /^\d+$/.test(value) || "Please enter a valid number"
       },
       {
         id: "additional_info",
@@ -73,62 +76,105 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     ];
   
-    // Create overlay
     const overlay = document.createElement("div");
     overlay.id = "popup-overlay";
-    document.body.appendChild(overlay);
   
-    // Create popup
     const popup = document.createElement("div");
     popup.id = "preference-popup";
-    popup.innerHTML = `<h2>Your Preferences</h2>`;
   
-    questions.forEach(q => {
-      const wrapper = document.createElement("div");
-      wrapper.className = "question";
-      wrapper.innerHTML += `<label><strong>${q.question}</strong></label>`;
+    const questionContainer = document.createElement("div");
+    questionContainer.id = "question-container";
   
-      if (q.type === "checkbox") {
-        q.options.forEach(opt => {
-          wrapper.innerHTML += `<label><input type="checkbox" name="${q.id}" value="${opt}"> ${opt}</label>`;
-        });
-      } else if (q.type === "range") {
-        wrapper.innerHTML += `<input type="range" id="${q.id}" name="${q.id}" min="1" max="100" />`;
-      } else {
-        wrapper.innerHTML += `<input type="text" id="${q.id}" name="${q.id}" />`;
-      }
+    const error = document.createElement("p");
+    error.style.color = "red";
   
-      popup.appendChild(wrapper);
-    });
+    popup.appendChild(questionContainer);
+    popup.appendChild(error);
   
-    popup.innerHTML += `<button id="submit-preferences">Submit</button>`;
+    const nextBtn = document.createElement("button");
+    nextBtn.textContent = "Next";
+    popup.appendChild(nextBtn);
+  
+    document.body.appendChild(overlay);
     document.body.appendChild(popup);
     document.body.classList.add("blurred");
   
-    // Submit handler
-    document.getElementById("submit-preferences").addEventListener("click", () => {
-      const answers = {};
-      questions.forEach(q => {
-        if (q.type === "checkbox") {
-          answers[q.id] = [...document.querySelectorAll(`input[name="${q.id}"]:checked`)].map(el => el.value);
-        } else {
-          const el = document.getElementById(q.id);
-          answers[q.id] = el ? el.value : "";
+    let current = 0;
+    const answers = {};
+  
+    const renderQuestion = () => {
+      questionContainer.innerHTML = "";
+      error.textContent = "";
+  
+      const q = questions[current];
+      const label = document.createElement("label");
+      label.innerHTML = `<strong>${q.question}</strong>`;
+      questionContainer.appendChild(label);
+  
+      if (q.type === "checkbox") {
+        q.options.forEach(opt => {
+          const checkbox = document.createElement("input");
+          checkbox.type = "checkbox";
+          checkbox.name = q.id;
+          checkbox.value = opt;
+  
+          const lbl = document.createElement("label");
+          lbl.appendChild(checkbox);
+          lbl.append(` ${opt}`);
+          questionContainer.appendChild(lbl);
+        });
+      } else {
+        const input = document.createElement("input");
+        input.type = "text";
+        input.id = q.id;
+        questionContainer.appendChild(input);
+      }
+  
+      if (current === questions.length - 1) {
+        nextBtn.textContent = "Submit";
+      }
+    };
+  
+    renderQuestion();
+  
+    nextBtn.addEventListener("click", () => {
+      const q = questions[current];
+      error.textContent = "";
+  
+      if (q.type === "checkbox") {
+        const selected = [...document.querySelectorAll(`input[name="${q.id}"]:checked`)].map(el => el.value);
+        answers[q.id] = selected;
+      } else {
+        const val = document.getElementById(q.id).value.trim();
+        if (q.validate) {
+          const valid = q.validate(val);
+          if (valid !== true) {
+            error.textContent = valid;
+            return;
+          }
         }
-      });
+        answers[q.id] = val;
+      }
   
-      const user = JSON.parse(localStorage.getItem("userSession"));
+      current++;
   
-      fetch("http://127.0.0.1:5000/submit-preferences", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: user.email, preferences: answers })
-      }).then(() => {
-        popup.remove();
-        overlay.remove();
-        document.body.classList.remove("blurred");
-      });
+      if (current >= questions.length) {
+        // Done, submit preferences
+        fetch("http://127.0.0.1:5000/submit-preferences", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: user.email, preferences: answers })
+        }).then(() => {
+          popup.remove();
+          overlay.remove();
+          document.body.classList.remove("blurred");
+          document.body.classList.remove("hide-content");
+        });
+      } else {
+        renderQuestion();
+      }
     });
   }
+  
   
   

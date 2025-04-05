@@ -22,7 +22,7 @@ def submit_preferences():
     user["preferences"] = preferences
     user["first_time_user"] = False
 
-    container.upsert_item(user)  # ⬅️ This writes back to CosmosDB
+    container.upsert_item(user)
 
     return jsonify({"success": True, "message": "Preferences saved"})
 
