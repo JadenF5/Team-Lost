@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Stevens Events</title>
+    <link rel="stylesheet" href="./style.css" />
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+  </head>
+  <body>
+    <h1>Welcome</h1>
+
+    <div class="login-container">
+      <div class="button-group">
+        <button id="signin-btn" class="login-btn">Sign In</button>
+        <button id="signup-btn" class="login-btn">Sign Up</button>
+      </div>
+
+      <div id="signin-modal" class="modal">
+        <div class="modal-content">
+          <span class="close" onclick="closeModals()">&times;</span>
+          <h2>Sign In</h2>
+          <form id="signin-form">
+            <input type="text" id="signin-username" placeholder="Username" required />
+            <input type="password" id="signin-password" placeholder="Password" required />
+            <button type="submit" class="login-btn">Sign In</button>
+          </form>
+          <div class="divider"><span>or</span></div>
+          <div id="google-login-btn"></div>
+        </div>
+      </div>
+
+      <div id="signup-modal" class="modal">
+        <div class="modal-content">
+          <span class="close" onclick="closeModals()">&times;</span>
+          <h2>Sign Up</h2>
+          <form id="signup-form">
+            <input type="text" id="signup-username" placeholder="Choose Username" required />
+            <input type="email" id="signup-email" placeholder="Email" required />
+          
+            <input
+              type="password"
+              id="signup-password"
+              placeholder="Create Password"
+              required
+            />
+          
+            <div id="password-feedback" style="display: none;">
+              <ul id="password-requirements" class="password-rules">
+                <li id="length" class="invalid" data-text="At least 8 characters">❌ At least 8 characters</li>
+                <li id="uppercase" class="invalid" data-text="One uppercase letter">❌ One uppercase letter</li>
+                <li id="lowercase" class="invalid" data-text="One lowercase letter">❌ One lowercase letter</li>
+                <li id="symbol" class="invalid" data-text="One special character">❌ One special character</li>
+              </ul>
+              <p id="password-strength">Strength: <span></span></p>
+            </div>
+          
+            <div class="strength-bar-container" style="display: none;">
+              <div class="strength-bar" id="strength-bar"></div>
+            </div>
+          
+            <input type="password" id="signup-confirm-password" placeholder="Confirm Password" required />
+            <button type="submit" class="login-btn">Create Account</button>
+          </form>          
+          <div class="divider"><span>or</span></div>
+          <div id="google-signup-btn"></div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      function closeModals() {
+        document.getElementById("signin-modal").style.display = "none";
+        document.getElementById("signup-modal").style.display = "none";
+      }
+
+      function loadScript(src) {
+        if (document.querySelector(`script[src="${src}"]`)) return;
+        const script = document.createElement("script");
+        script.src = src;
+        document.body.appendChild(script);
+      }
+
+      document.getElementById("signin-btn").addEventListener("click", () => {
+        window.googleFlowType = "login";
+        document.getElementById("signin-modal").style.display = "block";
+        loadScript("login.js");
+      });
+
+      document.getElementById("signup-btn").addEventListener("click", () => {
+        window.googleFlowType = "signup";
+        document.getElementById("signup-modal").style.display = "block";
+        loadScript("signup.js");
+      });
+    </script>
+
+
+<div class="text-boxes">
+    <div class="text-box">
+      <h2>About us</h2>
+      <p>Yappa Yappa Yappa Yappa Yappa Yappa Yappa Yappa</p>
+    </div>
+  
+    <div class="text-box">
+      <h2>Find Us</h2>
+      <p>Yappa Yappa Yappa Yappa Yappa Yappa Yappa Yappa</p>
+    </div>
+  
+    <div class="text-box">
+      <h2>Overview</h2>
+      <p>Yappa Yappa Yappa Yappa Yappa Yappa Yappa Yappa</p>
+    </div>
+  </div>
+  </body>
+</html>
