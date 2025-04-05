@@ -86,8 +86,6 @@ def scrape_hoboken():
         return event_data
 
 
-
-
 # Function that scrapes events from DuckLink (Stevens student orgs/events)
 def scrape_ducklink():
     with sync_playwright() as p:
@@ -234,12 +232,21 @@ def scrape_visitnjdotcom():
                 if image_url and image_url.startswith("/"):
                     image_url = f"https://visitnj.org{image_url}"
 
+                street = card.query_selector("span.streetAddress")
+                city = card.query_selector("span.city")
+                state = card.query_selector("span.state")
+
+                street_text = clean_text(street.inner_text()) if street else ""
+                city_text = clean_text(city.inner_text()) if city else ""
+                state_text = clean_text(state.inner_text()) if state else ""
+
+                full_location = ", ".join(filter(None, [street_text, city_text, state_text]))
 
                 event_data.append({
                     "title": title,
                     "date": date,
-                    "location": "New Jersey",
-                    "description": f"{title} on {date}",
+                    "location": full_location,
+                    "description": f"{title} at {full_location}",
                     "image": image_url,
                     "url": url
                 })
@@ -261,9 +268,6 @@ def scrape_visitnjdotcom():
 
         browser.close()
         return event_data
-
-
-
 
 # Used to scrape NYC events
 def scrape_nyc():
@@ -457,8 +461,8 @@ def main():
     raw_events = {
         # "hobokengirl": scrape_hoboken(), # COMPLETE
         # "ducklink": scrape_ducklink(), # COMPLETE
-        # "visitnj": scrape_visitnjdotcom(), # COMPLETED
-        "nyc": scrape_nyc(),
+        "visitnj": scrape_visitnjdotcom(), # COMPLETED
+        # "nyc": scrape_nyc(), COMPLETED
     }
 
     for source, events in raw_events.items():
