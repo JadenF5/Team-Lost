@@ -40,7 +40,10 @@ def signup():
         "id": email,
         "email": email,
         "username": username,
-        "password": password
+        "password": password,
+        "first_time_user": True,
+        "preferences": "Null"
+
     }
 
     container.create_item(user_data)
@@ -66,7 +69,9 @@ def signup_google():
             "id": email,
             "email": email,
             "username": name,
-            "password": None  
+            "password": None,
+            "first_time_user": True,
+            "preferences": "Null"
         })
 
         return jsonify({"success": True, "message": "Signed up with Google!", "email": email, "username": name})

@@ -249,4 +249,31 @@ h1 {
     transition: width 0.3s ease, background-color 0.3s ease;
     border-radius: 5px;
   }
+  .blurred #main-content {
+    filter: blur(6px);
+    pointer-events: none;
+  }
+  
+  #popup-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0,0,0,0.3);
+    z-index: 9998;
+  }
+  
+  #preference-popup {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 90%;
+    max-width: 600px;
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    z-index: 9999;
+  }
   
