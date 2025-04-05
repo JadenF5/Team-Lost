@@ -338,6 +338,16 @@ header {
     z-index: 1001;
 }
 
+.hide-content #main-content {
+    display: none;
+}
+
+.blurred #main-content {
+    filter: blur(6px);
+    pointer-events: none;
+    user-select: none;
+}
+
 @media (max-width: 768px) {
     .search-container {
         flex-direction: column;
