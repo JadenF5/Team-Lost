@@ -333,7 +333,42 @@
                 </div>
             </section>
         </main>
+<<<<<<< HEAD
 
         <script src="./main-script.js"></script>
+=======
+        <div
+            id="copilot-chat-container"
+            class="copilot-chat-container"
+            style="display: none"
+        >
+            <iframe
+                src="https://copilotstudio.microsoft.com/environments/e8c53870-bc94-e4db-9e41-bc8c76c53e10/bots/cr260_websiteQA/webchat?__version__=2"
+                frameborder="0"
+            ></iframe>
+        </div>
+
+        <button id="copilot-chat-toggle" class="copilot-chat-toggle">💬</button>
+
+        <script src="./main-script.js"></script>
+        <script>
+            // Copilot Chat Toggle Logic
+            const copilotChatContainer = document.getElementById(
+                "copilot-chat-container"
+            );
+            const copilotChatToggle = document.getElementById(
+                "copilot-chat-toggle"
+            );
+
+            copilotChatToggle.addEventListener("click", () => {
+                const isCurrentlyVisible =
+                    copilotChatContainer.style.display !== "none";
+                copilotChatContainer.style.display = isCurrentlyVisible
+                    ? "none"
+                    : "block";
+                copilotChatToggle.textContent = isCurrentlyVisible ? "💬" : "✕";
+            });
+        </script>
+>>>>>>> 17c08c7796c7f902e56cc58fd08478c00d619ff2
     </body>
 </html>
