@@ -9,6 +9,8 @@ key = os.getenv("COSMOS_KEY")
 database_name = "HackathonDB"
 container_name = "Users"
 events_container_name = "Events"
+filtered_events_container_name = "FilteredEvents"
+
 client = CosmosClient(url, credential=key)
 
 database = client.create_database_if_not_exists(id=database_name)
@@ -20,6 +22,10 @@ container = database.create_container_if_not_exists(
 events_container = database.create_container_if_not_exists(
     id = events_container_name,
     partition_key=PartitionKey(path='/source'),
+)
+filtered_events_container = database.create_container_if_not_exists(
+    id=filtered_events_container_name,
+    partition_key=PartitionKey(path='/user_id')
 )
 
 def insert_event(event_data):

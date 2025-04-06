@@ -77,10 +77,7 @@ document.addEventListener("DOMContentLoaded", () => {
   
     let current = 0;
     const answers = {};
-  
-    const overlay = document.createElement("div");
-    overlay.id = "popup-overlay";
-  
+   
     const popup = document.createElement("div");
     popup.id = "preference-popup";
   
@@ -163,20 +160,40 @@ document.addEventListener("DOMContentLoaded", () => {
   
     function submitPreferences() {
       const user = JSON.parse(localStorage.getItem("userSession"));
-  
+    
+      popup.remove();
+      document.body.classList.remove("blurred");
+      document.body.classList.remove("hide-content");
+    
       fetch("http://127.0.0.1:5000/submit-preferences", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: user.email, preferences: answers })
-      }).then(() => {
-        overlay.remove();
-        popup.remove();
-        document.body.classList.remove("blurred");
-        document.body.classList.remove("hide-content");
+      })
+      .then(res => res.json())
+      .then(data => {
+        console.log("✅ Preferences submitted:", data);
+    
+        const msg = document.createElement("div");
+        msg.innerText = "🎯 Personalizing your events...";
+        msg.style.position = "fixed";
+        msg.style.top = "20px";
+        msg.style.left = "50%";
+        msg.style.transform = "translateX(-50%)";
+        msg.style.padding = "10px 20px";
+        msg.style.background = "#4285f4";
+        msg.style.color = "white";
+        msg.style.borderRadius = "6px";
+        msg.style.zIndex = 99999;
+        document.body.appendChild(msg);
+        setTimeout(() => msg.remove(), 4000);
+      })
+      .catch(err => {
+        console.error("❌ Failed to submit preferences:", err);
       });
     }
+    
   
-    document.body.appendChild(overlay);
     document.body.appendChild(popup);
     document.body.classList.add("blurred");
     document.body.classList.add("hide-content");

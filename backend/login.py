@@ -3,6 +3,10 @@ from flask_cors import CORS
 from db import container
 from google.oauth2 import id_token
 from google.auth.transport import requests as google_requests
+from filterEvents import run_for_user
+from threading import Thread
+
+
 
 login_bp = Blueprint("login", __name__)
 CORS(login_bp)
@@ -28,6 +32,10 @@ def login():
 
     if user.get("password") != password:
         return jsonify({"success": False, "error": "Incorrect password"}), 403
+    try:
+        Thread(target=run_for_user, args=(user["id"],)).start()
+    except Exception as e:
+        print(f"[AI FILTER ERROR] Could not run filtering for user {user['id']}: {e}")
 
     return jsonify({"success": True, "message": "Login successful", "user": user})
 
@@ -46,6 +54,11 @@ def login_google():
 
         if not users:
             return jsonify({"success": False, "error": "Google account not registered"}), 404
+
+        try:
+            Thread(target=run_for_user, args=(users[0]["id"],)).start()
+        except Exception as e:
+            print(f"[AI FILTER ERROR] Could not run filtering for user {users[0]['id']}: {e}")
 
         return jsonify({"success": True, "message": "Logged in with Google", "user": users[0]})
 
