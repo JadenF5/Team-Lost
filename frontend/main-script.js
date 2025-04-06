@@ -1,4 +1,4 @@
-document.addEventListener("DOMContentLoaded", function () {
+document.addEventListener("DOMContentLoaded", async function () {
     const searchBar = document.getElementById("search-bar");
     const searchButton = document.getElementById("search-button");
 
@@ -240,8 +240,6 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     });
 
-    updateArrowVisibility();
-
     eventRows.forEach((row) => {
         row.addEventListener("scroll", function () {
             updateArrowVisibility();
@@ -309,4 +307,43 @@ document.addEventListener("DOMContentLoaded", function () {
             card.style.transform = "scale(1)";
         });
     }
+
+    // Fetch the top 10 events for each catagory to show on the page
+    async function fetchEvents(city, containerId) {
+        try {
+            const response = await fetch(`http://localhost:5000/api/events-by-city?city=${encodeURIComponent(city)}`);
+            const events = await response.json();
+
+            const container = document.getElementById(containerId);
+            container.innerHTML = "";
+
+            events.forEach(event => {
+                const card = document.createElement("div");
+                card.className = "event-card";
+                card.onclick = () => window.location.href = `event.html?id=${event.id}`;
+
+                card.innerHTML = `
+                    <div class="event-icon" style="background-image: url('${event.image || ''}')"></div>
+                    <h3>${event.title}</h3>
+                    <p>${event.description?.substring(0, 100)}...</p>
+                    `;
+
+                container.appendChild(card);
+            });
+        } catch (err) {
+            console.error(`Failed to load events for ${city}:`, err);
+        }
+    }
+
+    await fetchEvents("", "popularity-row");
+    await fetchEvents("Hoboken", "hoboken-row");
+    await fetchEvents("New York City", "nyc-row");
+    await fetchEvents("Other", "other-row");
+
+    // Ensure the arrows are properly updated a small moment after the events are loaded
+    setTimeout(() => {
+        updateArrowVisibility(); 
+    }, 100); 
 });
+
+

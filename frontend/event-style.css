@@ -17,6 +17,20 @@ h1 {
     text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
 }
 
+.event-title-container {
+    max-width: 1300px; 
+    margin: 0 auto;  
+    padding: 0 20px;  
+    text-align: center;
+  }
+  
+  .event-title {
+    font-size: 3rem; 
+    word-wrap: break-word;
+    font-weight: bold;
+    line-height: 1.2;
+  }
+
 .content-wrapper {
     display: flex;
     justify-content: center;
@@ -129,6 +143,18 @@ h1 {
     box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
 }
 
+.date-box {
+    margin-top: 10px;
+    padding: 10px 15px;
+    background-color: #fff3cd;
+    color: #856404;
+    font-weight: bold;
+    font-size: 0.95rem;
+    border-left: 4px solid #ffeeba;
+    border-radius: 6px;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+}
+
 @media (max-width: 768px) {
     .map,
     .desc {
@@ -138,6 +164,10 @@ h1 {
 
     .content-wrapper {
         flex-direction: column;
+    }
+
+    .event-title {
+        font-size: 1.8rem;
     }
 }
 

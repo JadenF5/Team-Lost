@@ -11,6 +11,7 @@ document.addEventListener("DOMContentLoaded", async function () {
     const eventTitle = document.querySelector("h1");
     const description = document.querySelector(".desc p");
     const price = document.querySelector(".price-box");
+    const date = document.querySelector(".date-box");
     const mapContainer = document.querySelector(".map");
     const iframe = document.querySelector(".map iframe");
     const extraContent = document.querySelector(".extra-content");
@@ -26,9 +27,11 @@ document.addEventListener("DOMContentLoaded", async function () {
             // Dynamically update content
             document.title = event.title || "Event Title";
             eventTitle.textContent = event.title || `Event ${eventId}`;
-            description.textContent =
-                event.description || "No description available.";
-            price.textContent = event.date || ""; // Temporaily date, will change this when we can estimate a price
+            description.textContent = event.description || "No description available.";
+            price.textContent = `Estimated price: ${event.price || "Free or TBD"}`;
+            date.textContent = `Date: ${event.date || "Date not available."}`; 
+            
+
 
             if (event.location) {
                 updateMap(event.location);

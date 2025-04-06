@@ -68,6 +68,53 @@ def search_events():
         print(f"Search error: {e}")
         return jsonify({"error": str(e)}), 500
 
+# Get the top 10 events specified by each city
+@event_bp.route("/api/events-by-city", methods=["GET"])
+def get_top_events_by_city():
+    city = request.args.get("city", "")
+    limit = 10
+
+    try:
+        if city == "":
+            # No city specified = return top 10 globally by popularity
+            query = "SELECT * FROM c"
+        
+        elif city.lower() == "other":
+            # Any city that's NOT Hoboken or NYC
+            query = """
+            SELECT * FROM c
+            WHERE NOT (c.city = 'Hoboken' OR c.city = 'New York City')
+            """
+
+        else:
+            # Filter for a specific city
+            query = f"""
+            SELECT * FROM c
+            WHERE c.city = '{city}'
+            """
+
+        items = list(events_container.query_items(
+            query=query,
+            enable_cross_partition_query=True
+        ))
+
+        # Sort by popularity
+        sorted_items = sorted(items, key=safe_popularity, reverse=True)
+
+        # Return top 10
+        return jsonify(sorted_items[:limit])
+
+    except Exception as e:
+        print(f"Error fetching top events by city: {e}")
+        return jsonify({"error": str(e)}), 500
+
+# Helper function to convert popularity for an event into an int (originally a string)
+def safe_popularity(e):
+    try:
+        return int(e.get("popularity", 0))
+    except:
+        return 0
+
 def enhance_location_data(event):
     """
     Try to enhance location data by adding missing details
