@@ -4,6 +4,7 @@ from login import login_bp
 from signup import signup_bp
 from event import event_bp
 from preferences import preferences_bp
+from aisearch import aisearch_bp
 
 
 app = Flask(__name__)
