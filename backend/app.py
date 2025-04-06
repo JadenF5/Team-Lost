@@ -4,6 +4,8 @@ from login import login_bp
 from signup import signup_bp
 from event import event_bp
 from preferences import preferences_bp
+from aisearch import aisearch_bp
+
 
 
 app = Flask(__name__)
@@ -14,6 +16,7 @@ app.register_blueprint(login_bp)
 app.register_blueprint(signup_bp)
 app.register_blueprint(event_bp)
 app.register_blueprint(preferences_bp)
+app.register_blueprint(aisearch_bp)
 
 if __name__ == "__main__":
     app.run(debug=True, port=5000)
