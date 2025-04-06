@@ -1,87 +1,268 @@
 from flask import Blueprint, jsonify, request
-from openai import AzureOpenAI
+from azure.search.documents import SearchClient
+from azure.core.credentials import AzureKeyCredential
 
 import dotenv
-from db import events_container
 import os
+import uuid
+import traceback
+import logging
+
 dotenv.load_dotenv()
 
-client = AzureOpenAI(
-    azure_endpoint=os.environ["AZURE_OPENAI_ENDPOINT2"],
-    api_key=os.environ["AZURE_OPENAI_API_KEY2"],
-    api_version="2024-12-01-preview",
+# Configure logging
+logging.basicConfig(
+    level=logging.DEBUG, 
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.StreamHandler(),  # Output to console
+        logging.FileHandler('aisearch.log', encoding='utf-8')  # Output to file
+    ]
 )
+logger = logging.getLogger(__name__)
+
+# Azure AI Search configuration
+try:
+    search_endpoint = os.environ.get("AZURE_SEARCH_ENDPOINT")
+    search_key = os.environ.get("AZURE_SEARCH_KEY")
+    search_index_name = os.environ.get("AZURE_SEARCH_INDEX_NAME")
+
+    logger.info(f"Initializing Search Client:")
+    logger.info(f"Endpoint: {search_endpoint}")
+    logger.info(f"Index Name: {search_index_name}")
+    logger.info(f"Key Provided: {'Yes' if search_key else 'No'}")
+
+    search_client = SearchClient(
+        endpoint=search_endpoint,
+        index_name=search_index_name,
+        credential=AzureKeyCredential(search_key)
+    )
+    logger.info("Search Client initialized successfully")
+
+except Exception as e:
+    logger.error(f"Search Client initialization error: {e}")
+    search_client = None
+
+# Initialize the search client with more robust error handling
+search_client = None
+try:
+    if all([search_endpoint, search_key, search_index_name]):
+        search_client = SearchClient(
+            endpoint=search_endpoint,
+            index_name=search_index_name,
+            credential=AzureKeyCredential(search_key)
+        )
+        logger.info(f"Successfully initialized SearchClient for index: {search_index_name}")
+    else:
+        logger.error("Missing required Azure Search configuration")
+except Exception as init_error:
+    logger.error(f"ERROR initializing SearchClient: {init_error}")
+    logger.error(traceback.format_exc())
 
 aisearch_bp = Blueprint("aisearch", __name__)
 
-@aisearch_bp.route("/api/query", methods=["GET"])
-def fetch_event():
-    usertext = request.args.get("usertext")
-    
-    if not usertext or len(usertext.strip()) < 2:
-        return jsonify([])
+def safe_search(search_text, top=20):
+    """
+    Perform a safe search with error handling and logging
+    """
+    if not search_client:
+        logger.error("Search client not initialized")
+        return []
 
     try:
-        query = gen_sql_query(usertext)
-        print(f"Generated SQL query: {query}")
+        logger.debug(f"Performing search for: {search_text}")
         
-        items = db_query(query)
-        print(f"Query returned {len(items)} results")
+        # Use a wildcard search if text is empty or too short
+        if not search_text or len(search_text.strip()) < 2:
+            search_text = '*'
         
-        # Ensure each item has required fields
-        for item in items:
-            if "id" not in item:
-                item["id"] = str(uuid.uuid4())
-            if "title" not in item:
-                item["title"] = "Untitled Event"
-            if "description" not in item:
-                item["description"] = "No description available"
+        results = search_client.search(
+            search_text=search_text,
+            select=[
+                "id", "title", "description", "date", 
+                "location", "image", "url", "price", 
+                "popularity", "attendance", "source", "city"
+            ],
+            top=top,
+            search_mode="any",  # More flexible matching
+            query_type="full"  # Use full text search
+        )
         
-        return jsonify(items)
+        # Convert results to a list of dictionaries
+        items = []
+        for result in results:
+            item = dict(result)
+            
+            # Ensure each item has required fields
+            item['id'] = item.get('id', str(uuid.uuid4()))
+            item['title'] = item.get('title', 'Untitled Event')
+            item['description'] = item.get('description', 'No description available')
+            
+            items.append(item)
+        
+        logger.info(f"Search for '{search_text}' returned {len(items)} results")
+        return items
+    
     except Exception as e:
-        print(f"Error in fetch_event: {e}")
-        return jsonify([])
+        logger.error(f"Search error for '{search_text}': {e}")
+        logger.error(traceback.format_exc())
+        return []
 
-
-def gen_sql_query(usertext):
-    prompt = f"""
-    You are an SQL query generator and you generate SQL queries for an event database. 
-    The schema of the database is as such where every entry has the following attributes: 
-    id, source(is either "amny", "hobokengirl", "visitnj", "duclink", where ducklink are events specifically at Stevens Institute of Technology), title, description, date, location, image(link to image), URL(link to event listing), price, popularity(score out of 100 on how popular the event is to students attending Stevens Institute of Technology), attendance(expected attendance). 
-    Only respond with an SQL query or respond with the string "ERROR" if there is any issue. 
-    Always begin with "SELECT * FROM c" and format every attribute as "c.(attribute)". 
-    Remove the semicolons at the end and make sure any strings ignore capitailzation.
+@aisearch_bp.route("/api/search-proxy", methods=["POST"])
+def search_proxy():
+    """
+    Proxy endpoint for more flexible search via POST
     """
     try:
-        completion = client.chat.completions.create(
-            model=os.environ["AZURE_OPENAI_DEPLOYMENT_NAME"],
-            messages=[{"role": "system", "content": prompt}, {"role": "user", "content": usertext}],
-        )
+        # Log full request details for debugging
+        logger.debug(f"Received request headers: {request.headers}")
+        logger.debug(f"Received request data: {request.get_data()}")
 
-        content = completion.choices[0].message.content.strip()
+        # Get search parameters from the request
+        data = request.json or {}
+        search_text = data.get("search_text", "*")
+        
+        logger.debug(f"Extracted search text: {search_text}")
 
-        # Handle case where AI might wrap JSON in code blocks (```json ... ```)
-        if content.startswith("```"):
-            content = content.split("```")[1].strip("sql").strip()
-
-        return content
-
+        # Perform search
+        items = safe_search(search_text)
+        
+        logger.info(f"Returning {len(items)} search results")
+        return jsonify(items)
+        
     except Exception as e:
-        print(f"[AI ERROR] Failed to generate detailed event data: {e}")
-        # Fallback structure
-        return f"SELECT * FROM c WHERE c.title LIKE %{usertext}%"
+        logger.error(f"Error in search_proxy: {e}")
+        logger.error(traceback.format_exc())
+        return jsonify({
+            "error": str(e),
+            "details": {
+                "search_text": search_text if 'search_text' in locals() else 'N/A',
+                "endpoint": search_endpoint,
+                "index_name": search_index_name
+            }
+        }), 500
 
-def db_query(sqlquery):
+@aisearch_bp.route("/api/query", methods=["GET"])
+def fetch_event():
+    """
+    GET endpoint for fetching events with a query parameter
+    """
+    usertext = request.args.get("usertext", "").strip()
+    
+    if not usertext or len(usertext) < 2:
+        logger.debug("Empty or too short search query")
+        return jsonify([])
+
     try:
-        # Make sure we're getting query part after FROM c
-        if sqlquery.startswith("SELECT * FROM c"):
-            query_part = sqlquery
-        else:
-            query_part = f"SELECT * FROM c {sqlquery}"
-            
-        items = list(events_container.query_items(query=query_part, enable_cross_partition_query=True))
-        # Return top 10 results
-        return items[:10] if items else []
+        # Log search parameters
+        logger.debug(f"Searching with parameters:")
+        logger.debug(f"Search Text: {usertext}")
+        logger.debug(f"Endpoint: {search_endpoint}")
+        logger.debug(f"Index: {search_index_name}")
+
+        # Perform search
+        items = safe_search(usertext)
+        
+        return jsonify(items)
+    
     except Exception as e:
-        print(f"Error in db_query: {e}")
-        return []
+        logger.error(f"Error in fetch_event: {e}")
+        logger.error(traceback.format_exc())
+        return jsonify({
+            "error": str(e),
+            "details": {
+                "search_text": usertext,
+                "endpoint": search_endpoint,
+                "index_name": search_index_name
+            }
+        }), 500
+
+@aisearch_bp.route("/api/search-with-filters", methods=["GET"])
+def search_with_filters():
+    """
+    Advanced search endpoint that supports filtering by various criteria
+    """
+    usertext = request.args.get("usertext", "")
+    source = request.args.get("source")
+    city = request.args.get("city")
+    min_popularity = request.args.get("min_popularity")
+    sort_by = request.args.get("sort_by", "relevance")  # Default to relevance sorting
+    
+    # Build filter string if any filters are specified
+    filter_conditions = []
+    if source:
+        filter_conditions.append(f"source eq '{source}'")
+    if city:
+        filter_conditions.append(f"city eq '{city}'")
+    if min_popularity and min_popularity.isdigit():
+        filter_conditions.append(f"popularity ge {min_popularity}")
+    
+    filter_string = " and ".join(filter_conditions) if filter_conditions else None
+    
+    # Determine sort order
+    if sort_by == "date":
+        order_by = "date desc"
+    elif sort_by == "popularity":
+        order_by = "popularity desc"
+    else:
+        order_by = None  # Use default relevance sorting
+    
+    try:
+        # If there's no search text but there are filters, use "*" to match all documents
+        search_text = usertext if usertext else "*"
+        
+        # Log search parameters
+        logger.debug(f"Filtered search:")
+        logger.debug(f"Search Text: {search_text}")
+        logger.debug(f"Filters: {filter_string}")
+        logger.debug(f"Sort By: {sort_by}")
+        
+        # Execute search with filters
+        results = search_client.search(
+            search_text=search_text,
+            filter=filter_string,
+            order_by=order_by,
+            select=[
+                "id", "title", "description", "date", 
+                "location", "image", "url", "price", 
+                "popularity", "attendance", "source", "city"
+            ],
+            highlight="title,description",
+            highlight_pre_tag="<b>",
+            highlight_post_tag="</b>",
+            top=20
+        )
+        
+        # Process results
+        items = [dict(result) for result in results]
+        
+        logger.info(f"Filtered search returned {len(items)} results")
+        return jsonify(items)
+    except Exception as e:
+        logger.error(f"Error in search_with_filters: {e}")
+        logger.error(traceback.format_exc())
+        return jsonify({"error": str(e)}), 500
+
+@aisearch_bp.route("/api/get-facets", methods=["GET"])
+def get_facets():
+    """
+    Get facet values for filtering options (sources, cities, etc.)
+    """
+    try:
+        # Use a wildcard query to get facets from all documents
+        results = search_client.search(
+            search_text="*",
+            facets=["source", "city"],
+            top=0  # We only need facets, not actual results
+        )
+        
+        # Extract facet information
+        facets = {}
+        for facet_name, facet_values in results.get_facets().items():
+            facets[facet_name] = [{"value": f.value, "count": f.count} for f in facet_values]
+        
+        return jsonify(facets)
+    except Exception as e:
+        logger.error(f"Error in get_facets: {e}")
+        logger.error(traceback.format_exc())
+        return jsonify({"error": str(e)}), 500

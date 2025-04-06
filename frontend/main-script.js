@@ -64,31 +64,48 @@ document.addEventListener("DOMContentLoaded", async function () {
 
     // Function to fetch and display search results
     async function fetchSearchResults(query) {
+        console.log("Searching for:", query);
+
         if (!query || query.length < 2) {
             searchDropdown.style.display = "none";
             return;
         }
 
         try {
-            // Fetch events from the API
             const response = await fetch(
-                `http://localhost:5000/api/search?q=${encodeURIComponent(
-                    query
-                )}`
+                "http://127.0.0.1:5000/api/search-proxy",
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        // Consider adding this header
+                        "Access-Control-Allow-Origin": "*",
+                    },
+                    body: JSON.stringify({
+                        search_text: query,
+                    }),
+                }
             );
 
-            // If the backend search API isn't implemented yet, we'll use a fallback client-side search
+            console.log("Response status:", response.status);
+            console.log(
+                "Response headers:",
+                Object.fromEntries(response.headers)
+            );
+
             if (!response.ok) {
-                performClientSideSearch(query);
-                return;
+                const errorText = await response.text();
+                console.error("Error response:", errorText);
+                throw new Error(`HTTP error ${response.status}: ${errorText}`);
             }
 
             const results = await response.json();
+            console.log("Search results:", results);
+
             displaySearchResults(results);
         } catch (error) {
-            console.error("Error fetching search results:", error);
-            // Fallback to client-side filtering
-            performClientSideSearch(query);
+            console.error("Full error details:", error);
+            displaySearchResults([]);
         }
     }
 
@@ -139,38 +156,21 @@ document.addEventListener("DOMContentLoaded", async function () {
         }
 
         results.forEach((result) => {
-            // Format location if available
-            let locationText = "";
-            if (result.location) {
-                // Clean up location text
-                locationText = result.location.trim();
-
-                // If there's an address in the location (often has numbers), keep it as is
-                if (!locationText.match(/\d+/)) {
-                    locationText = `${locationText}`;
-                }
-            }
-
-            // Prepare description - make it a bit cleaner
-            const description = result.description || "";
-            let formattedDescription = description;
-
-            // If description contains the title, don't repeat it
-            if (description.includes(result.title)) {
-                formattedDescription = description;
-            }
-
             const resultItem = document.createElement("div");
             resultItem.className = "result-item";
             resultItem.innerHTML = `
-                <div class="result-title">${result.title}</div>
+                <div class="result-title">${
+                    result.title || "Untitled Event"
+                }</div>
                 <div class="result-details">
                     ${
-                        locationText
-                            ? `<span class="result-location">${locationText}</span>`
+                        result.location
+                            ? `<span class="result-location">${result.location}</span>`
                             : ""
                     }
-                    <p class="result-description">${formattedDescription}</p>
+                    <p class="result-description">${(
+                        result.description || "No description"
+                    ).substring(0, 100)}...</p>
                 </div>
             `;
 
@@ -264,40 +264,27 @@ document.addEventListener("DOMContentLoaded", async function () {
     }
 
     // Original search functionality for highlighting events on the page
-    function performSearch() {
-        const searchTerm = searchBar.value.toLowerCase().trim();
+    async function performSearch(query) {
+        try {
+            const response = await fetch("/api/search-proxy", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    search_text: query,
+                }),
+            });
 
-        if (searchTerm === "") {
-            showAllEvents();
-            return;
-        }
-
-        const eventCards = document.querySelectorAll(".event-card");
-        let hasMatches = false;
-
-        eventCards.forEach((card) => {
-            const title = card.querySelector("h3").textContent.toLowerCase();
-            const description = card
-                .querySelector("p")
-                .textContent.toLowerCase();
-
-            if (
-                title.includes(searchTerm) ||
-                description.includes(searchTerm)
-            ) {
-                card.style.border = "2px solid #4285f4";
-                card.style.transform = "scale(1.03)";
-                hasMatches = true;
-            } else {
-                card.style.border = "none";
-                card.style.opacity = "0.6";
-                card.style.transform = "scale(1)";
+            if (!response.ok) {
+                throw new Error(`HTTP error ${response.status}`);
             }
-        });
 
-        if (!hasMatches) {
-            alert("No events found matching your search");
-            showAllEvents();
+            const results = await response.json();
+            createSearchResultsSection(query, results);
+        } catch (error) {
+            console.error("Search error:", error);
+            createSearchResultsSection(query, []);
         }
     }
 
@@ -488,46 +475,32 @@ document.addEventListener("DOMContentLoaded", async function () {
             if (query.length < 2) return;
 
             try {
-                // Show loading state
                 mainSearchBar.disabled = true;
                 mainSearchBar.placeholder = "Searching...";
 
-                // Call the AI search endpoint
-                console.log("Searching for:", query);
                 const response = await fetch(
-                    `http://localhost:5000/api/query?usertext=${encodeURIComponent(
-                        query
-                    )}`
+                    "http://127.0.0.1:5000/api/search-proxy",
+                    {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                        },
+                        body: JSON.stringify({
+                            search_text: query,
+                        }),
+                    }
                 );
 
-                // For debugging
-                const responseText = await response.text();
-                console.log("Raw API Response:", responseText);
+                const results = await response.json();
+                createSearchResultsSection(query, results);
 
-                // Convert back to JSON
-                const results = JSON.parse(responseText);
-                console.log("Parsed results:", results);
-
-                aiSearchResults = Array.isArray(results) ? results : [results]; // Ensure we have an array
-                console.log("Final results array:", aiSearchResults);
-
-                // Create search results section
-                createSearchResultsSection(query, aiSearchResults);
-
-                // Reset search bar
                 mainSearchBar.disabled = false;
-                mainSearchBar.placeholder = "Search for events";
+                mainSearchBar.placeholder = "AI Powered Search 🤖";
             } catch (error) {
-                console.error("AI search error:", error);
+                console.error("Search error:", error);
                 mainSearchBar.disabled = false;
-                mainSearchBar.placeholder = "Search for events";
-
-                // Create empty search results section even on error
+                mainSearchBar.placeholder = "AI Powered Search 🤖";
                 createSearchResultsSection(query, []);
-
-                alert(
-                    "Sorry, there was an error with your search. Please try again."
-                );
             }
         }
     });

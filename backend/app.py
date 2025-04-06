@@ -6,10 +6,19 @@ from event import event_bp
 from preferences import preferences_bp
 from aisearch import aisearch_bp
 
-
-
 app = Flask(__name__)
-CORS(app)
+CORS(app, resources={
+    r"/*": {
+        "origins": "*",  # Be cautious with this in production
+        "allow_headers": [
+            "Content-Type", 
+            "Authorization", 
+            "Access-Control-Allow-Credentials"
+        ],
+        "supports_credentials": True
+    }
+})
+
 
 # Register blueprints
 app.register_blueprint(login_bp)
