@@ -11,36 +11,54 @@
         <body class="hide-content">
             <div id="main-content">
                 <header>
-                    <div class="search-container">
-                        <div class="search-bar-wrapper">
-                            <input
-                                type="text"
-                                id="search-bar"
-                                placeholder="What events are you looking for?"
-                                autocomplete="off"
-                            />
-                            <button id="search-button">Search</button>
+                    <div class="top-header">
+                        <div class="search-container">
+                            <div class="search-bar-wrapper">
+                                <input
+                                    type="text"
+                                    id="search-bar"
+                                    placeholder="What events are you looking for?"
+                                    autocomplete="off"
+                                />
+                                <button
+                                    id="search-button"
+                                    style="display: none"
+                                >
+                                    Search
+                                </button>
+                            </div>
                         </div>
                     </div>
+
                     <div class="user-info">
                         <span id="user-name"></span>
                         <button id="logout-btn">Logout</button>
+                    </div>
+
+                    <div class="main-search-container">
+                        <input
+                            type="text"
+                            id="main-search-bar"
+                            placeholder="Search for events"
+                            autocomplete="off"
+                        />
                     </div>
                 </header>
 
                 <main>
                     <section class="events-container">
-
                         <div class="location-section">
                             <h2 class="location-header">Popularity</h2>
-                        
+
                             <div class="row-container">
                                 <div class="slider-arrow left">←</div>
-                                <div class="event-row" id="popularity-row"></div>
+                                <div
+                                    class="event-row"
+                                    id="popularity-row"
+                                ></div>
                                 <div class="slider-arrow right">→</div>
                             </div>
                         </div>
-                        
 
                         <div class="location-section">
                             <h2 class="location-header">Hoboken</h2>
@@ -75,48 +93,6 @@
                 </main>
 
                 <script src="./main-script.js"></script>
-                <div
-                    id="copilot-chat-container"
-                    class="copilot-chat-container"
-                    style="display: none"
-                >
-                    <iframe
-                        src="https://copilotstudio.microsoft.com/environments/e8c53870-bc94-e4db-9e41-bc8c76c53e10/bots/cr260_websiteQA/webchat?__version__=2"
-                        frameborder="0"
-                    ></iframe>
-                </div>
-
-                <button id="copilot-chat-toggle" class="copilot-chat-toggle">
-                    💬
-                </button>
-
-                <script src="./main-script.js"></script>
-                <script>
-                    // Copilot Chat Toggle Logic
-                    const copilotChatContainer = document.getElementById(
-                        "copilot-chat-container"
-                    );
-                    const copilotChatToggle = document.getElementById(
-                        "copilot-chat-toggle"
-                    );
-
-                    copilotChatToggle.addEventListener("click", () => {
-                        const isCurrentlyVisible =
-                            copilotChatContainer.style.display !== "none";
-                        copilotChatContainer.style.display = isCurrentlyVisible
-                            ? "none"
-                            : "block";
-                        copilotChatToggle.textContent = isCurrentlyVisible
-                            ? "💬"
-                            : "✕";
-
-                        if (isCurrentlyVisible) {
-                            copilotChatToggle.classList.remove("open");
-                        } else {
-                            copilotChatToggle.classList.add("open");
-                        }
-                    });
-                </script>
             </div>
         </body>
     </body>
