@@ -3,7 +3,58 @@ import requests
 import os
 from db import insert_event
 import re
+import json
+from openai import AzureOpenAI
 
+import dotenv
+dotenv.load_dotenv()
+
+client = AzureOpenAI(
+    azure_endpoint=os.environ["AZURE_OPENAI_ENDPOINT"],
+    api_key=os.environ["AZURE_OPENAI_API_KEY"],
+    api_version="2024-12-01-preview",
+)
+
+def generate_ai_description(title, date, location):
+    prompt = f"""
+    For the following event, generate a JSON response with:
+    - "description": an exciting summary,
+    - "estimated_price": approximate ticket price (string),
+    - "popularity": pick a number between 1-100, 100 being best, 1 being lowest,
+    - "expected_attendance": estimated number of attendees,
+    - "approx_location": based on location give the city.
+
+    Event Details:
+    Title: {title}
+    Date: {date}
+    Location: {location}
+    
+    Respond only in valid JSON format.
+    """
+    try:
+        completion = client.chat.completions.create(
+            model=os.environ["AZURE_OPENAI_DEPLOYMENT_NAME"],
+            messages=[{"role": "user", "content": prompt}],
+        )
+
+        content = completion.choices[0].message.content.strip()
+
+        # Handle case where AI might wrap JSON in code blocks (```json ... ```)
+        if content.startswith("```"):
+            content = content.split("```")[1].strip("json").strip()
+
+        return json.loads(content)
+
+    except Exception as e:
+        print(f"[AI ERROR] Failed to generate detailed event data: {e}")
+        # Fallback structure
+        return {
+            "description": f"{title} at {location}",
+            "estimated_price": "N/A",
+            "popularity": "Unknown",
+            "expected_attendance": 0,
+            "approx_location": "N/A"
+        }
 
 # Cleaning text for HobokenGirl
 def clean_text(text):
@@ -32,11 +83,9 @@ def build_clean_description(title, location):
     if not title or not location:
         return title or "Event"
 
-
     # Try to extract venue name from location (before the street address)
     venue = location.split(" ")[0:5]  # Take up to 5 words before the address
     venue_name = " ".join(venue).strip()
-
 
     # If the venue appears in the title, don't repeat it
     if venue_name.lower() in title.lower():
@@ -44,15 +93,14 @@ def build_clean_description(title, location):
     return f"{title} at {location}"
 
 
-
-
 # Function that scrapes events from HobokenGirl
 def scrape_hoboken():
     with sync_playwright() as p:
-        browser = p.chromium.launch(headless=True)
+        browser = p.chromium.launch(headless=False)
         page = browser.new_page()
         page.goto("https://www.hobokengirl.com/events/", timeout=60000)
         page.wait_for_selector("article.tribe-events-calendar-month-mobile-events__mobile-event", timeout=15000, state="attached")
+        page.wait_for_timeout(3000)
         event_cards = page.query_selector_all("article.tribe-events-calendar-month-mobile-events__mobile-event")
         event_data = []
 
@@ -68,7 +116,8 @@ def scrape_hoboken():
             date = clean_text(date_el.inner_text()) if date_el else None
             location = clean_text(location_el.inner_text()) if location_el else None
             image_url = img_el.get_attribute("src") if img_el else None
-
+            link_el = card.query_selector("a")
+            event_url = link_el.get_attribute("href") if link_el else None
 
             description = build_clean_description(title, location)
 
@@ -78,7 +127,8 @@ def scrape_hoboken():
                 "date": date,
                 "location": location,
                 "description": description,
-                "image": image_url
+                "image": image_url,
+                "url": event_url
             })
 
 
@@ -338,12 +388,6 @@ def scrape_nyc():
         return event_data
 
 
-
-
-
-
-
-
 # Function that applies AI filters to each website
 import uuid
 # This works for HobokenGirl Data
@@ -353,21 +397,25 @@ def ai_filter_events(raw_data, source):
         title = event.get("title") or "Untitled Event"
         date = event.get("date")
         location = event.get("location")
-        description = event.get("description") or f"{title} at {location}"
         image = event.get("image")
+        url = event.get("url")
 
-
-        event_id = str(uuid.uuid5(uuid.NAMESPACE_DNS, f"{title}{date}{location}"))
-
+        ai_info = generate_ai_description(title, date, location)
+        event_id = str(uuid.uuid5(uuid.NAMESPACE_DNS, f"{title}{date}{location}{source}"))
 
         structured.append({
             "id": event_id,
             "title": title,
-            "description": description,
+            "description": ai_info["description"],
+            "price": ai_info["estimated_price"],
+            "popularity": ai_info["popularity"],
+            "attendance": ai_info["expected_attendance"],
             "source": source,
             "date": date,
             "location": location,
-            "image": image
+            "city": ai_info["approx_location"],
+            "image": image,
+            "url": url
         })
     return structured
 
@@ -379,22 +427,23 @@ def ai_filter_events_ducklink(raw_data):
         title = event.get("title") or "Untitled Event"
         date = event.get("date")
         location = event.get("location") or "Stevens Institute of Technology"
-        description = event.get("description") or title
         image = event.get("image")
         url = event.get("url")
 
-
-        # Unique ID based on multiple fields
+        ai_info = generate_ai_description(title, date, location)
         event_id = str(uuid.uuid5(uuid.NAMESPACE_DNS, f"{title}{date}{location}ducklink"))
-
 
         structured.append({
             "id": event_id,
             "title": title,
-            "description": description,
+            "description": ai_info["description"],
+            "price": ai_info["estimated_price"],
+            "popularity": ai_info["popularity"],
+            "attendance": ai_info["expected_attendance"],
             "source": "ducklink",
             "date": date,
             "location": location,
+            "city": ai_info["approx_location"],
             "image": image,
             "url": url
         })
@@ -408,22 +457,23 @@ def ai_filter_events_visitnj(raw_data):
         title = event.get("title") or "Untitled Event"
         date = event.get("date")
         location = event.get("location") or "New Jersey"
-        description = event.get("description") or f"{title} at {location}"
         image = event.get("image")
         url = event.get("url")
 
-
-        # Unique ID based on event fields
+        ai_info = generate_ai_description(title, date, location)
         event_id = str(uuid.uuid5(uuid.NAMESPACE_DNS, f"{title}{date}{location}visitnj"))
-
 
         structured.append({
             "id": event_id,
             "title": title,
-            "description": description,
+            "description": ai_info["description"],
+            "price": ai_info["estimated_price"],
+            "popularity": ai_info["popularity"],
+            "attendance": ai_info["expected_attendance"],
             "source": "visitnj",
             "date": date,
             "location": location,
+            "city": ai_info["approx_location"],
             "image": image,
             "url": url
         })
@@ -436,21 +486,23 @@ def ai_filter_events_nyc(raw_data):
         title = event.get("title") or "Untitled Event"
         date = event.get("date")
         location = event.get("location") or "New York City"
-        description = event.get("description") or f"{title} in {location}"
         image = event.get("image")
         url = event.get("url")
 
-
+        ai_info = generate_ai_description(title, date, location)
         event_id = str(uuid.uuid5(uuid.NAMESPACE_DNS, f"{title}{date}{location}amny"))
-
 
         structured.append({
             "id": event_id,
             "title": title,
-            "description": description,
+            "description": ai_info["description"],
+            "price": ai_info["estimated_price"],
+            "popularity": ai_info["popularity"],
+            "attendance": ai_info["expected_attendance"],
             "source": "amny",
             "date": date,
             "location": location,
+            "city": ai_info["approx_location"],
             "image": image,
             "url": url
         })
@@ -459,28 +511,36 @@ def ai_filter_events_nyc(raw_data):
 
 def main():
     raw_events = {
-        # "hobokengirl": scrape_hoboken(), # COMPLETE
-        # "ducklink": scrape_ducklink(), # COMPLETE
-        "visitnj": scrape_visitnjdotcom(), # COMPLETED
-        # "nyc": scrape_nyc(), COMPLETED
+        # "hobokengirl": scrape_hoboken(),
+        # "ducklink": scrape_ducklink(),
+        # "visitnj": scrape_visitnjdotcom(),
+        "nyc": scrape_nyc(),
     }
 
     for source, events in raw_events.items():
         print(f"\n========== {source.upper()} ==========")
-        # Route to different AI filter logic based on source
-        if source == "ducklink":
-            structured = ai_filter_events_ducklink(events)
-        elif source == "visitnj":
-            structured = ai_filter_events_visitnj(events)
-        elif source == "nyc":
-            structured = ai_filter_events_nyc(events)
-        else:
-            structured = ai_filter_events(events, source)
-        for event in structured:
-            print(event)
-            insert_event(event)
-            print("-----------------------------------")
 
+        # Loop through events one at a time
+        for idx, event in enumerate(events):
+            print(f"\n--- Processing event #{idx + 1}/{len(events)} ---")
+
+            try:
+                if source == "ducklink":
+                    structured_list = ai_filter_events_ducklink([event])
+                elif source == "visitnj":
+                    structured_list = ai_filter_events_visitnj([event])
+                elif source == "nyc":
+                    structured_list = ai_filter_events_nyc([event])
+                else:
+                    structured_list = ai_filter_events([event], source)
+
+                for structured_event in structured_list:
+                    print(structured_event)
+                    insert_event(structured_event)
+                    print("-----------------------------------")
+            except Exception as e:
+                print(f"[ERROR] Failed to process event #{idx + 1}: {e}")
 
 if __name__ == "__main__":
     main()
+ 
