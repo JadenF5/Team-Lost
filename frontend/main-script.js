@@ -1,6 +1,8 @@
 document.addEventListener("DOMContentLoaded", async function () {
     const searchBar = document.getElementById("search-bar");
     const searchButton = document.getElementById("search-button");
+    const mainSearchBar = document.getElementById("main-search-bar");
+    let aiSearchResults = null;
 
     const userSession = JSON.parse(localStorage.getItem("userSession"));
     if (!userSession) {
@@ -311,19 +313,26 @@ document.addEventListener("DOMContentLoaded", async function () {
     // Fetch the top 10 events for each catagory to show on the page
     async function fetchEvents(city, containerId) {
         try {
-            const response = await fetch(`http://localhost:5000/api/events-by-city?city=${encodeURIComponent(city)}`);
+            const response = await fetch(
+                `http://localhost:5000/api/events-by-city?city=${encodeURIComponent(
+                    city
+                )}`
+            );
             const events = await response.json();
 
             const container = document.getElementById(containerId);
             container.innerHTML = "";
 
-            events.forEach(event => {
+            events.forEach((event) => {
                 const card = document.createElement("div");
                 card.className = "event-card";
-                card.onclick = () => window.location.href = `event.html?id=${event.id}`;
+                card.onclick = () =>
+                    (window.location.href = `event.html?id=${event.id}`);
 
                 card.innerHTML = `
-                    <div class="event-icon" style="background-image: url('${event.image || ''}')"></div>
+                    <div class="event-icon" style="background-image: url('${
+                        event.image || ""
+                    }')"></div>
                     <h3>${event.title}</h3>
                     <p>${event.description?.substring(0, 100)}...</p>
                     `;
@@ -342,8 +351,184 @@ document.addEventListener("DOMContentLoaded", async function () {
 
     // Ensure the arrows are properly updated a small moment after the events are loaded
     setTimeout(() => {
-        updateArrowVisibility(); 
-    }, 100); 
+        updateArrowVisibility();
+    }, 100);
+
+    // In your createSearchResultsSection function in main-script.js
+    function createSearchResultsSection(query, results) {
+        // Check if the section already exists and remove it
+        const existingSection = document.querySelector(
+            ".search-results-section"
+        );
+        if (existingSection) {
+            existingSection.remove();
+        }
+
+        // Create new section for search results
+        const resultsSection = document.createElement("div");
+        resultsSection.className = "location-section search-results-section";
+
+        // Create header with query
+        const header = document.createElement("h2");
+        header.className = "location-header";
+        header.textContent = `Results for "${query}"`;
+        resultsSection.appendChild(header);
+
+        // Create row container and event row
+        const rowContainer = document.createElement("div");
+        rowContainer.className = "row-container";
+
+        const leftArrow = document.createElement("div");
+        leftArrow.className = "slider-arrow left";
+        leftArrow.textContent = "←";
+
+        const eventRow = document.createElement("div");
+        eventRow.className = "event-row";
+        eventRow.id = "search-results-row";
+
+        const rightArrow = document.createElement("div");
+        rightArrow.className = "slider-arrow right";
+        rightArrow.textContent = "→";
+
+        rowContainer.appendChild(leftArrow);
+        rowContainer.appendChild(eventRow);
+        rowContainer.appendChild(rightArrow);
+        resultsSection.appendChild(rowContainer);
+
+        // Insert the section at the top of the events container, before the Popularity section
+        const eventsContainer = document.querySelector(".events-container");
+        const popularitySection = document.querySelector(".location-section");
+        eventsContainer.insertBefore(resultsSection, popularitySection);
+
+        // Add the events to the row
+        if (results && results.length > 0) {
+            populateSearchResults(results, eventRow);
+        } else {
+            // Add a "no results" message with suggestions
+            const noResults = document.createElement("div");
+            noResults.className = "no-results-message";
+            noResults.textContent =
+                "No events found matching your search criteria.";
+            noResults.style.padding = "30px 20px";
+            noResults.style.textAlign = "center";
+            noResults.style.backgroundColor = "rgba(255, 255, 255, 0.7)";
+            noResults.style.borderRadius = "8px";
+            eventRow.appendChild(noResults);
+        }
+
+        // Add event listeners for arrows - this is the key fix
+        leftArrow.addEventListener("click", function () {
+            const cardWidth =
+                eventRow.querySelector(".event-card")?.offsetWidth || 300;
+            eventRow.scrollBy({
+                left: -cardWidth - 20, // Account for gap
+                behavior: "smooth",
+            });
+        });
+
+        rightArrow.addEventListener("click", function () {
+            const cardWidth =
+                eventRow.querySelector(".event-card")?.offsetWidth || 300;
+            eventRow.scrollBy({
+                left: cardWidth + 20, // Account for gap
+                behavior: "smooth",
+            });
+        });
+
+        // Run this after a slight delay to ensure DOM is ready
+        setTimeout(() => {
+            updateArrowVisibility();
+        }, 100);
+    }
+
+    function populateSearchResults(results, container) {
+        console.log("Populating results:", results);
+
+        if (!results || results.length === 0) {
+            console.log("No results to populate");
+            return;
+        }
+
+        results.forEach((event, index) => {
+            console.log(`Processing event ${index}:`, event);
+
+            if (!event || !event.title) {
+                console.log(`Event ${index} is invalid:`, event);
+                return;
+            }
+
+            const card = document.createElement("div");
+            card.className = "event-card";
+
+            // Make sure we have a valid ID for the event
+            const eventId = event.id || `search-result-${index}`;
+
+            card.onclick = () =>
+                (window.location.href = `event.html?id=${eventId}`);
+
+            // Create card with fallback for missing properties
+            card.innerHTML = `
+                <div class="event-icon" style="background-image: url('${
+                    event.image || ""
+                }')"></div>
+                <h3>${event.title || "Untitled Event"}</h3>
+                <p>${(
+                    event.description || "No description available"
+                ).substring(0, 100)}...</p>
+            `;
+
+            container.appendChild(card);
+        });
+    }
+
+    // Add event listener for the main search bar
+    mainSearchBar.addEventListener("keypress", async function (e) {
+        if (e.key === "Enter") {
+            const query = this.value.trim();
+            if (query.length < 2) return;
+
+            try {
+                // Show loading state
+                mainSearchBar.disabled = true;
+                mainSearchBar.placeholder = "Searching...";
+
+                // Call the AI search endpoint
+                console.log("Searching for:", query);
+                const response = await fetch(
+                    `http://localhost:5000/api/query?usertext=${encodeURIComponent(
+                        query
+                    )}`
+                );
+
+                // For debugging
+                const responseText = await response.text();
+                console.log("Raw API Response:", responseText);
+
+                // Convert back to JSON
+                const results = JSON.parse(responseText);
+                console.log("Parsed results:", results);
+
+                aiSearchResults = Array.isArray(results) ? results : [results]; // Ensure we have an array
+                console.log("Final results array:", aiSearchResults);
+
+                // Create search results section
+                createSearchResultsSection(query, aiSearchResults);
+
+                // Reset search bar
+                mainSearchBar.disabled = false;
+                mainSearchBar.placeholder = "Search for events";
+            } catch (error) {
+                console.error("AI search error:", error);
+                mainSearchBar.disabled = false;
+                mainSearchBar.placeholder = "Search for events";
+
+                // Create empty search results section even on error
+                createSearchResultsSection(query, []);
+
+                alert(
+                    "Sorry, there was an error with your search. Please try again."
+                );
+            }
+        }
+    });
 });
-
-

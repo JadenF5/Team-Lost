@@ -14,18 +14,34 @@ client = AzureOpenAI(
 
 aisearch_bp = Blueprint("aisearch", __name__)
 
-
 @aisearch_bp.route("/api/query", methods=["GET"])
 def fetch_event():
     usertext = request.args.get("usertext")
+    
+    if not usertext or len(usertext.strip()) < 2:
+        return jsonify([])
 
-    query = gen_sql_query(usertext)
-    item = db_query(query)
+    try:
+        query = gen_sql_query(usertext)
+        print(f"Generated SQL query: {query}")
+        
+        items = db_query(query)
+        print(f"Query returned {len(items)} results")
+        
+        # Ensure each item has required fields
+        for item in items:
+            if "id" not in item:
+                item["id"] = str(uuid.uuid4())
+            if "title" not in item:
+                item["title"] = "Untitled Event"
+            if "description" not in item:
+                item["description"] = "No description available"
+        
+        return jsonify(items)
+    except Exception as e:
+        print(f"Error in fetch_event: {e}")
+        return jsonify([])
 
-    if item:
-        return jsonify(item)
-    else:
-        return ("Not found", 404)
 
 def gen_sql_query(usertext):
     prompt = f"""
@@ -57,11 +73,15 @@ def gen_sql_query(usertext):
 
 def db_query(sqlquery):
     try:
-        dbquery = f"SELECT * FROM c {sqlquery}"
-        items = list(events_container.query_items(query=dbquery, enable_cross_partition_query=True))
-        if items:
-            return items[0]
+        # Make sure we're getting query part after FROM c
+        if sqlquery.startswith("SELECT * FROM c"):
+            query_part = sqlquery
         else:
-            None
+            query_part = f"SELECT * FROM c {sqlquery}"
+            
+        items = list(events_container.query_items(query=query_part, enable_cross_partition_query=True))
+        # Return top 10 results
+        return items[:10] if items else []
     except Exception as e:
-        print(f"Error fetching event by ID: {e}")
+        print(f"Error in db_query: {e}")
+        return []
