@@ -174,9 +174,7 @@ document.addEventListener("DOMContentLoaded", async function () {
 
     // Function to fetch and display search results
     async function fetchSearchResults(query) {
-        console.log("Searching for:", query);
-
-        if (!query || query.length < 2) {
+        if (!query || query.length < 3) {
             searchDropdown.style.display = "none";
             return;
         }
@@ -186,31 +184,24 @@ document.addEventListener("DOMContentLoaded", async function () {
                 "http://127.0.0.1:5000/api/search-proxy",
                 {
                     method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        "Access-Control-Allow-Origin": "*",
-                    },
-                    body: JSON.stringify({
-                        search_text: query,
-                    }),
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ search_text: query }),
                 }
             );
 
-            console.log("Response status:", response.status);
-
             if (!response.ok) {
-                const errorText = await response.text();
-                console.error("Error response:", errorText);
-                throw new Error(`HTTP error ${response.status}: ${errorText}`);
+                throw new Error(`HTTP error ${response.status}`);
             }
 
             const results = await response.json();
-            console.log("Search results:", results);
 
+            // Display results using your existing styles
             displaySearchResults(results);
         } catch (error) {
-            console.error("Full error details:", error);
-            displaySearchResults([]);
+            console.error("Search error:", error);
+            searchDropdown.innerHTML =
+                '<div class="no-results">Error searching. Please try again.</div>';
+            searchDropdown.style.display = "block";
         }
     }
 
@@ -263,8 +254,10 @@ document.addEventListener("DOMContentLoaded", async function () {
 
     // Function to display search results in the dropdown
     function displaySearchResults(results) {
+        // Clear existing content
         searchDropdown.innerHTML = "";
 
+        // Handle no results case
         if (!results || results.length === 0) {
             const noResults = document.createElement("div");
             noResults.className = "no-results";
@@ -274,52 +267,82 @@ document.addEventListener("DOMContentLoaded", async function () {
             return;
         }
 
-        results.forEach((result) => {
-            const resultItem = document.createElement("div");
-            resultItem.className = "result-item";
-            resultItem.innerHTML = `
+        // Limit to 5 results to match your screenshot
+        const topResults = results.slice(0, 5);
+
+        // Create each result item
+        topResults.forEach((result) => {
+            const item = document.createElement("div");
+            item.className = "result-item";
+
+            // Format HTML to match your screenshot exactly
+            let html = `
                 <div class="result-title">${
                     result.title || "Untitled Event"
                 }</div>
-                <div class="result-details">
-                    ${
-                        result.location
-                            ? `<span class="result-location">${result.location}</span>`
-                            : ""
-                    }
-                    <p class="result-description">${(
-                        result.description || "No description"
-                    ).substring(0, 100)}...</p>
+            `;
+
+            // Add location if available (shown in italics in your screenshot)
+            if (result.location) {
+                html += `<div class="result-location" style="font-style: italic; color: #666; font-size: 0.9em;">${result.location}</div>`;
+            }
+
+            // Add description (shown as regular text in your screenshot)
+            html += `
+                <div style="margin-top: 5px; font-size: 0.9em; color: #333;">
+                    ${(result.description || "No description").substring(
+                        0,
+                        100
+                    )}${
+                result.description && result.description.length > 100
+                    ? "..."
+                    : ""
+            }
                 </div>
             `;
 
-            resultItem.addEventListener("click", () => {
+            item.innerHTML = html;
+
+            // Add click handler to navigate to the event page
+            item.addEventListener("click", () => {
                 window.location.href = `event.html?id=${result.id}`;
             });
 
-            searchDropdown.appendChild(resultItem);
+            searchDropdown.appendChild(item);
         });
 
+        // Show the dropdown
         searchDropdown.style.display = "block";
     }
-
     // Event listener for search input with debounce
     let debounceTimer;
     searchBar.addEventListener("input", function () {
         const query = this.value.trim();
 
+        // Clear any existing timer
         clearTimeout(debounceTimer);
-        debounceTimer = setTimeout(() => {
-            fetchSearchResults(query);
-        }, 300); // Debounce for 300ms to avoid excessive API calls
+
+        // Show results as soon as we have 3+ characters
+        if (query.length >= 3) {
+            // Show loading state immediately
+            searchDropdown.innerHTML =
+                '<div class="no-results" style="padding: 15px; text-align: center;">Searching...</div>';
+            searchDropdown.style.display = "block";
+
+            // Fetch results with a short delay to prevent too many requests
+            debounceTimer = setTimeout(() => {
+                fetchSearchResults(query);
+            }, 250); // Reduced debounce time for more responsive feel
+        } else {
+            // Hide the dropdown when query is too short
+            searchDropdown.style.display = "none";
+        }
     });
 
     searchButton.addEventListener("click", function () {
-        const searchTerm = searchBar.value.toLowerCase().trim();
+        const searchTerm = searchBar.value.trim();
         if (searchTerm.length >= 2) {
             fetchSearchResults(searchTerm);
-        } else {
-            performSearch();
         }
     });
 
@@ -328,8 +351,6 @@ document.addEventListener("DOMContentLoaded", async function () {
             const searchTerm = this.value.trim();
             if (searchTerm.length >= 2) {
                 fetchSearchResults(searchTerm);
-            } else {
-                performSearch();
             }
         }
     });

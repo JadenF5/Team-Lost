@@ -1,7 +1,6 @@
 from flask import Blueprint, jsonify, request
 from azure.search.documents import SearchClient
 from azure.core.credentials import AzureKeyCredential
-from preprocessor import preprocess_query
 
 import dotenv
 import os
@@ -72,17 +71,13 @@ def safe_search(search_text, top=20):
 
     try:
         logger.debug(f"Performing search for: {search_text}")
-
+        
         # Use a wildcard search if text is empty or too short
         if not search_text or len(search_text.strip()) < 2:
             search_text = '*'
-        else:
-            processed = preprocess_query(search_text)
-            search_text = processed["core_query"] + " " + processed["tags"]
         
         results = search_client.search(
             search_text=search_text,
-            scoring_profile="initialTest",
             select=[
                 "id", "title", "description", "date", 
                 "location", "image", "url", "price", 
@@ -226,7 +221,6 @@ def search_with_filters():
         results = search_client.search(
             search_text=search_text,
             filter=filter_string,
-            scoring_profile="initialTest",
             order_by=order_by,
             select=[
                 "id", "title", "description", "date", 
@@ -258,7 +252,6 @@ def get_facets():
         # Use a wildcard query to get facets from all documents
         results = search_client.search(
             search_text="*",
-            scoring_profile="initialTest",
             facets=["source", "city"],
             top=0  # We only need facets, not actual results
         )
