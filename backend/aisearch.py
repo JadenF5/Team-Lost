@@ -1,6 +1,7 @@
 from flask import Blueprint, jsonify, request
 from azure.search.documents import SearchClient
 from azure.core.credentials import AzureKeyCredential
+from preprocessor import preprocess_query
 
 import dotenv
 import os
@@ -75,7 +76,13 @@ def safe_search(search_text, top=20):
         # Use a wildcard search if text is empty or too short
         if not search_text or len(search_text.strip()) < 2:
             search_text = '*'
-        
+        else:
+            processed = preprocess_query(search_text)
+            if processed["core_query"]:
+                search_text = processed["core_query"] + " " + processed["tags"]
+            elif processed["city"]:
+                search_text = processed["city"]
+                
         results = search_client.search(
             search_text=search_text,
             select=[
