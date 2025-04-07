@@ -47,14 +47,31 @@
 
                 <main>
                     <section class="events-container">
-                        <div class="location-section">
-                            <h2 class="location-header">Popularity</h2>
+                        <div class="location-section" id="recommended-section">
+                            <h2 class="location-header">Recommended for You</h2>
 
-                            <div class="row-container">
+                            <div
+                                id="recommended-loading"
+                                class="loading-container"
+                            >
+                                <div class="loading-message">
+                                    <div class="spinner"></div>
+                                    <p>
+                                        Generating personalized event
+                                        recommendations...
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div
+                                class="row-container"
+                                style="display: none"
+                                id="recommended-container"
+                            >
                                 <div class="slider-arrow left">←</div>
                                 <div
                                     class="event-row"
-                                    id="popularity-row"
+                                    id="recommended-row"
                                 ></div>
                                 <div class="slider-arrow right">→</div>
                             </div>
